@@ -3,191 +3,47 @@
 <head>
 <base target="_top">
 <title>Tu Gregario - Ciclismo Online</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
 <style>
-/* 1. Estilos Raíz: CORRECCIÓN RESPONSIVE */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  /* CLAVE: Quitamos overflow: hidden para permitir el scroll en móvil */
-}
-
-/* 2. Estilos Base */
-body {
-  font-family: 'Poppins', Arial, sans-serif;
-  background-color: #1a1a2e;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-/* 3. Contenedor Principal (Flexbox) */
-#main-wrapper {
-  width: 100%;
-  max-width: 700px;
-  /* Usamos min-height 100vh para asegurar la altura completa de la ventana */
-  min-height: 100vh; 
-  display: flex;
-  flex-direction: column;
-  background-color: #24243e;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-/* == NUEVO: ESTILOS DEL ENCABEZADO == */
-#chat-header {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #1a1a2e; /* Color de fondo oscuro */
-  border-bottom: 1px solid #33334f; /* Borde sutil para separar */
-  color: white;
-}
-
-#chat-header span {
-  font-size: 24px; /* Tamaño del icono */
-  margin-right: 12px;
-}
-
-#chat-header h1 {
-  font-size: 18px; /* Tamaño del título */
-  font-weight: 600;
-  margin: 0; /* Quitar margen por defecto del h1 */
-}
-/* ==================================== */
-
-/* 4. Contenedor del Chat (Cuerpo del chat) */
-#chat-container {
-  flex-grow: 1;
-  padding: 15px;
-  overflow-y: scroll; /* El único con scroll */
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* 5. Estilos de Mensajes (Bubble) */
-.message {
-  padding: 10px 15px;
-  border-radius: 20px;
-  max-width: 80%;
-  word-wrap: break-word;
-}
-.user {
-  background-color: #4e44b0;
-  color: white;
-  align-self: flex-end;
-  border-bottom-right-radius: 5px;
-}
-.bot {
-  background-color: #3f3f5f;
-  color: #e0e0e0;
-  align-self: flex-start;
-  border-bottom-left-radius: 5px;
-}
-.bot strong {
-  color: #ffcc00;
-}
-
-/* 6. Contenedor de Input */
-#input-container {
-  display: flex;
-  padding: 10px;
-  border-top: 1px solid #33334f;
-  background-color: #24243e;
-  position: sticky;
-  bottom: 0;
-}
-#user-input {
-  flex-grow: 1;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 25px;
-  background-color: #33334f;
-  color: white;
-  font-size: 16px;
-  margin-right: 10px;
-  outline: none;
-}
-#send-button {
-  background-color: #4e44b0;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 45px;
-  height: 45px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-#send-button:hover:not(:disabled) {
-  background-color: #6a5bcd;
-}
-#send-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 7. Spinner de Carga */
-.spinner {
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top: 4px solid #ffcc00;
-  width: 25px;
-  height: 25px;
-  -webkit-animation: spin 1s linear infinite;
-  animation: spin 1s linear infinite;
-  align-self: flex-start;
-  margin: 10px 15px;
-}
-
-/* 8. Media Query para Responsive */
-@media (max-width: 600px) {
-  #main-wrapper {
-    box-shadow: none;
-  }
-}
-
-/* 9. Keyframes para la animación del spinner */
-@-webkit-keyframes spin {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
-}
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
+html, body { height: 100%; margin: 0; padding: 0; width: 100%; }
+body { font-family: 'Poppins', Arial, sans-serif; background-color: #1a1a2e; display: flex; justify-content: center; align-items: flex-start; }
+#main-wrapper { width: 100%; max-width: 700px; min-height: 100vh; display: flex; flex-direction: column; background-color: #24243e; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+#chat-header { display: flex; align-items: center; padding: 10px 15px; background-color: #1a1a2e; border-bottom: 1px solid #33334f; color: white; }
+#chat-header span { font-size: 24px; margin-right: 12px; }
+#chat-header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+#chat-container { flex-grow: 1; padding: 15px; overflow-y: scroll; display: flex; flex-direction: column; gap: 10px; }
+.message { padding: 10px 15px; border-radius: 20px; max-width: 80%; word-wrap: break-word; }
+.user { background-color: #4e44b0; color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
+.bot { background-color: #3f3f5f; color: #e0e0e0; align-self: flex-start; border-bottom-left-radius: 5px; }
+.bot strong { color: #ffcc00; }
+#input-container { display: flex; padding: 10px; border-top: 1px solid #33334f; background-color: #24243e; position: sticky; bottom: 0; }
+#user-input { flex-grow: 1; padding: 10px 15px; border: none; border-radius: 25px; background-color: #33334f; color: white; font-size: 16px; margin-right: 10px; outline: none; }
+#send-button { background-color: #4e44b0; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.3s; }
+#send-button:hover:not(:disabled) { background-color: #6a5bcd; }
+#send-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #ffcc00; width: 25px; height: 25px; -webkit-animation: spin 1s linear infinite; animation: spin 1s linear infinite; align-self: flex-start; margin: 10px 15px; }
+@media (max-width: 600px) { #main-wrapper { box-shadow: none; } }
+@-webkit-keyframes spin { 0% { -webkit-transform: rotate(0deg); } 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-
 <div id="main-wrapper">
-
-  <div id="chat-header">
-    <span>⚙️</span>
-    <h1>Tu Gregario de Ciclismo Online</h1>
-  </div>
-  <div id="chat-container">
-  </div>
-
-  <div id="input-container">
-    <input type="text" id="user-input" placeholder="Pregúntale a Tu Gregario..." autofocus>
-    <button id="send-button">
-      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.873L5.999 12zm0 0h7.5" />
-      </svg>
-    </button>
-  </div>
+  <div id="chat-header">
+    <span>⚙️</span>
+    <h1>Tu Gregario de Ciclismo Online</h1>
+  </div>
+  <div id="chat-container"></div>
+  <div id="input-container">
+    <input type="text" id="user-input" placeholder="Pregúntale a Tu Gregario..." autofocus>
+    <button id="send-button">
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.873L5.999 12zm0 0h7.5" />
+      </svg>
+    </button>
+  </div>
 </div>
-
 <script>
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
@@ -195,97 +51,75 @@ const chatContainer = document.getElementById('chat-container');
 let chatHistory = [];
 
 function appendMessage(sender, message) {
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('message', sender);
-  messageElement.innerHTML = message;
-  chatContainer.appendChild(messageElement);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  const messageElement = document.createElement('div');
+  messageElement.classList.add('message', sender);
+  messageElement.innerHTML = message;
+  chatContainer.appendChild(messageElement);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function sendMessage() {
-  const message = userInput.value.trim();
-  if (message === '') return;
+  const message = userInput.value.trim();
+  if (message === '') return;
+  userInput.disabled = true;
+  sendButton.disabled = true;
+  appendMessage('user', message);
+  chatHistory.push({ role: 'user', content: message });
+  userInput.value = '';
+  const spinner = document.createElement('div');
+  spinner.classList.add('spinner');
+  spinner.id = 'loading-spinner';
+  chatContainer.appendChild(spinner);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwsoRlhRl7qOLRPbUtHy--BKPgNsNOCn3PY24k_m50B57wZyBHGuwwbrxelvBUE79T7/exec';
 
-  userInput.disabled = true;
-  sendButton.disabled = true;
-
-  appendMessage('user', message);
-  chatHistory.push({ role: 'user', content: message });
-
-  userInput.value = '';
-
-  const spinner = document.createElement('div');
-  spinner.classList.add('spinner');
-  spinner.id = 'loading-spinner';
-  chatContainer.appendChild(spinner);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  // 🚀 URL DE LA WEB APP IMPLEMENTADA 🚀
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36KFWon8nSW0gD29W7iO5OGNSiK9AS4P672cvUWcifVcFXPIzHwr7y5nE5TRD_f6x/exec';
-
-  fetch(WEB_APP_URL, {
-    method: 'POST',
-    headers: {
-      // 👇👇👇 ¡ESTA ES LA LÍNEA CORREGIDA! 👇👇👇
-      'Content-Type': 'text/plain',
-    },
-    body: JSON.stringify({ chatHistory: chatHistory }),
-  })
-  .then(res => {
-    if (!res.ok) {
-      throw new Error(`Error HTTP: ${res.status} (${res.statusText})`);
-    }
-    return res.json();
-  })
-  .then(data => {
-    const currentSpinner = document.getElementById('loading-spinner');
-    if (currentSpinner) {
-      currentSpinner.remove();
-    }
-
-    if (data.success) {
-      const response = data.responseText;
-      appendMessage('bot', response);
-      chatHistory.push({ role: 'assistant', content: response });
-    } else {
-      appendMessage('bot', 'Disculpa, ha ocurrido un error en el servidor. ' + data.responseText);
-      console.error('Error de Apps Script:', data.responseText);
-    }
-
-    userInput.disabled = false;
-    sendButton.disabled = false;
-    userInput.focus();
-  })
-  .catch(error => {
-    const currentSpinner = document.getElementById('loading-spinner');
-    if (currentSpinner) {
-      currentSpinner.remove();
-    }
-    appendMessage('bot', 'Disculpa, ha ocurrido un error de conexión con la API. Por favor, inténtalo de nuevo más tarde.');
-    console.error('Error de Fetch:', error);
-
-    userInput.disabled = false;
-    sendButton.disabled = false;
-    userInput.focus();
-  });
+  fetch(WEB_APP_URL, {
+    method: 'POST',
+    headers: {
+      // Este es el cambio clave para evitar el error CORS 405
+      'Content-Type': 'text/plain', 
+    },
+    body: JSON.stringify({ chatHistory: chatHistory }),
+  })
+  .then(res => {
+    if (!res.ok) { throw new Error(`Error HTTP: ${res.status} (${res.statusText})`); }
+    return res.json();
+  })
+  .then(data => {
+    const currentSpinner = document.getElementById('loading-spinner');
+    if (currentSpinner) { currentSpinner.remove(); }
+    if (data.success) {
+      const response = data.responseText;
+      appendMessage('bot', response);
+      chatHistory.push({ role: 'assistant', content: response });
+    } else {
+      appendMessage('bot', 'Disculpa, ha ocurrido un error en el servidor. ' + data.responseText);
+      console.error('Error de Apps Script:', data.responseText);
+    }
+    userInput.disabled = false;
+    sendButton.disabled = false;
+    userInput.focus();
+  })
+  .catch(error => {
+    const currentSpinner = document.getElementById('loading-spinner');
+    if (currentSpinner) { currentSpinner.remove(); }
+    appendMessage('bot', 'Disculpa, ha ocurrido un error de conexión con la API. Por favor, inténtalo de nuevo más tarde.');
+    console.error('Error de Fetch:', error);
+    userInput.disabled = false;
+    sendButton.disabled = false;
+    userInput.focus();
+  });
 }
 
-// Event Listeners
 sendButton.addEventListener('click', sendMessage);
+userInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { sendMessage(); } });
 
-userInput.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') {
-    sendMessage();
-  }
-});
-
-// MENSAJE DE BIENVENIDA AL CARGAR
 document.addEventListener('DOMContentLoaded', function() {
-  const welcomeMessage = "<strong>¡Hola! Soy Tu Gregario, tu asistente experto de Ciclismo Online.</strong> 🚴<br><br>Mi misión es <strong>comparar precios y encontrarte la mejor oferta</strong> de productos (cascos, zapatillas, etc.) en nuestras tiendas <strong>afiliadas</strong>.<br><br><strong>Dime qué buscas</strong> y te haré unas preguntas rápidas de talla y presupuesto.";
-  appendMessage('bot', welcomeMessage);
-  userInput.focus();
+  const welcomeMessage = "<strong>¡Hola! Soy Tu Gregario, tu asistente experto de Ciclismo Online.</strong> 🚴<br><br>Mi misión es <strong>comparar precios y encontrarte la mejor oferta</strong> de productos (cascos, zapatillas, etc.) en nuestras tiendas <strong>afiliadas</strong>.<br><br><strong>Dime qué buscas</strong> y te haré unas preguntas rápidas de talla y presupuesto.";
+  appendMessage('bot', welcomeMessage);
+  userInput.focus();
 });
-
 </script>
 </body>
 </html>
