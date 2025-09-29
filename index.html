@@ -44,6 +44,7 @@ body { font-family: 'Poppins', Arial, sans-serif; background-color: #1a1a2e; dis
     </button>
   </div>
 </div>
+
 <script>
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
@@ -58,6 +59,26 @@ function appendMessage(sender, message) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// NUEVA FUNCIÓN DE CALLBACK PARA JSONP
+function handleResponse(data) {
+    const currentSpinner = document.getElementById('loading-spinner');
+    if (currentSpinner) { currentSpinner.remove(); }
+
+    if (data.success) {
+      const response = data.responseText;
+      appendMessage('bot', response);
+      chatHistory.push({ role: 'assistant', content: response });
+    } else {
+      appendMessage('bot', 'Disculpa, ha ocurrido un error en el servidor. ' + data.responseText);
+      console.error('Error de Apps Script:', data.responseText);
+    }
+
+    userInput.disabled = false;
+    sendButton.disabled = false;
+    userInput.focus();
+}
+
+// FUNCIÓN SENDMESSAGE MODIFICADA PARA USAR JSONP
 function sendMessage() {
   const message = userInput.value.trim();
   if (message === '') return;
@@ -72,44 +93,33 @@ function sendMessage() {
   chatContainer.appendChild(spinner);
   chatContainer.scrollTop = chatContainer.scrollHeight;
   
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby36KFWon8nSW0gD29W7iO5OGNSiK9AS4P672cvUWcifVcFXPIzHwr7y5nE5TRD_f6x/exec';
+  // 🚀 IMPORTANTE: USA LA **NUEVA** URL DE LA IMPLEMENTACIÓN 🚀
+  const WEB_APP_URL = 'PEGA_AQUÍ_LA_NUEVA_URL_DE_TU_IMPLEMENTACIÓN_WEB_APP';
+  
+  // Convertimos el historial a texto y lo codificamos para la URL
+  const historyParam = encodeURIComponent(JSON.stringify(chatHistory));
+  
+  // Creamos la URL con los parámetros para JSONP
+  const requestUrl = `${WEB_APP_URL}?callback=handleResponse&chatHistory=${historyParam}`;
 
-  fetch(WEB_APP_URL, {
-    method: 'POST',
-    headers: {
-      // Este es el cambio clave para evitar el error CORS 405
-      'Content-Type': 'text/plain', 
-    },
-    body: JSON.stringify({ chatHistory: chatHistory }),
-  })
-  .then(res => {
-    if (!res.ok) { throw new Error(`Error HTTP: ${res.status} (${res.statusText})`); }
-    return res.json();
-  })
-  .then(data => {
-    const currentSpinner = document.getElementById('loading-spinner');
-    if (currentSpinner) { currentSpinner.remove(); }
-    if (data.success) {
-      const response = data.responseText;
-      appendMessage('bot', response);
-      chatHistory.push({ role: 'assistant', content: response });
-    } else {
-      appendMessage('bot', 'Disculpa, ha ocurrido un error en el servidor. ' + data.responseText);
-      console.error('Error de Apps Script:', data.responseText);
-    }
-    userInput.disabled = false;
-    sendButton.disabled = false;
-    userInput.focus();
-  })
-  .catch(error => {
-    const currentSpinner = document.getElementById('loading-spinner');
-    if (currentSpinner) { currentSpinner.remove(); }
-    appendMessage('bot', 'Disculpa, ha ocurrido un error de conexión con la API. Por favor, inténtalo de nuevo más tarde.');
-    console.error('Error de Fetch:', error);
-    userInput.disabled = false;
-    sendButton.disabled = false;
-    userInput.focus();
-  });
+  // Creamos una etiqueta <script> dinámicamente
+  const script = document.createElement('script');
+  script.src = requestUrl;
+  
+  // Limpieza: eliminamos el script después de que se cargue (o falle)
+  script.onload = () => document.body.removeChild(script);
+  script.onerror = () => {
+      document.body.removeChild(script);
+      const currentSpinner = document.getElementById('loading-spinner');
+      if (currentSpinner) { currentSpinner.remove(); }
+      appendMessage('bot', 'Disculpa, ha ocurrido un error de conexión con la API (JSONP).');
+      userInput.disabled = false;
+      sendButton.disabled = false;
+      userInput.focus();
+  };
+  
+  // Añadimos el script al body para ejecutar la petición
+  document.body.appendChild(script);
 }
 
 sendButton.addEventListener('click', sendMessage);
