@@ -67,11 +67,14 @@ messageElement.classList.add('message', sender);
 
 // Si el mensaje es del bot, procesamos los formatos especiales
 if (sender === 'bot') {
-// --- INICIO DEL CAMBIO ---
-// NUEVA LÍNEA: Reemplaza los saltos de línea (\n) por etiquetas <br>
-message = message.replace(/\n/g, '<br>');
-// --- FIN DEL CAMBIO ---
+// Primero, convertimos los enlaces de Markdown a HTML para poder encontrarlos
 message = convertMarkdownToHTML(message);
+
+// --- INICIO DEL CAMBIO ---
+// LÍNEA MODIFICADA: Busca el final de un enlace seguido de un guion para insertar el salto de línea.
+// Esta es la forma precisa de separar únicamente los productos de la lista.
+message = message.replace(/<\/a> - /g, '</a><br>- ');
+// --- FIN DEL CAMBIO ---
 }
 
 messageElement.innerHTML = message;
@@ -112,8 +115,10 @@ throw new Error(errorData.responseText || `Error HTTP: ${response.status}`);
 const data = await response.json();
 
 if (data.success) {
-appendMessage('bot', data.responseText);
+// IMPORTANTE: El historial debe guardar el texto original de la IA, sin nuestro formato HTML
+// Por eso, guardamos data.responseText y luego llamamos a appendMessage
 chatHistory.push({ role: 'assistant', content: data.responseText });
+appendMessage('bot', data.responseText);
 } else {
 appendMessage('bot', 'Error del servidor: ' + data.responseText);
 }
