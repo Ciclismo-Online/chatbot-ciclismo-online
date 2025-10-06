@@ -56,8 +56,6 @@ const sendButton = document.getElementById('send-button');
 const chatContainer = document.getElementById('chat-container');
 let chatHistory = [];
 
-// --- INICIO DEL CAMBIO ---
-// Nueva función para convertir enlaces Markdown a HTML
 function convertMarkdownToHTML(text) {
 const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 return text.replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
@@ -67,11 +65,14 @@ function appendMessage(sender, message) {
 const messageElement = document.createElement('div');
 messageElement.classList.add('message', sender);
 
-// Si el mensaje es del bot, procesamos el Markdown antes de mostrarlo
+// Si el mensaje es del bot, procesamos los formatos especiales
 if (sender === 'bot') {
+// --- INICIO DEL CAMBIO ---
+// NUEVA LÍNEA: Reemplaza los saltos de línea (\n) por etiquetas <br>
+message = message.replace(/\n/g, '<br>');
+// --- FIN DEL CAMBIO ---
 message = convertMarkdownToHTML(message);
 }
-// --- FIN DEL CAMBIO ---
 
 messageElement.innerHTML = message;
 chatContainer.appendChild(messageElement);
