@@ -227,7 +227,7 @@
   function renderLanding(){
     currentState = STATE.LANDING;
     clearTransientUI();
-    appendMessage('bot', "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en varios eBay por ti.<br><br><strong>¿Qué necesitas hoy?</strong>");
+    appendMessage('bot', "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en las mejores tiendas online por ti. Para mantener este servicio gratuito, utilizo enlaces de afiliado.<br><br><strong>¿Qué necesitas hoy?</strong>");
     const container=document.createElement('div'); container.className='chips-container'; container.id='chips-container';
     const row=document.createElement('div'); row.className='chips-row';
     CONFIG.intents.forEach(label=>{
