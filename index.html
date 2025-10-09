@@ -295,22 +295,6 @@ function buildNaturalQuery(){
   parts.push('Devuélveme hasta 12 tarjetas con título, imagen, precio y link afiliado. Si no hay stock, sugiere ampliar precio o quitar filtros.');
   return parts.join(', ') + '. Muéstrame opciones.';
 }
-  // -------- NUEVA FUNCIÓN --------
-// Humaniza el mensaje que se muestra al usuario cuando se lanza la búsqueda.
-// Elimina instrucciones técnicas y deja solo un texto natural.
-function makeUserVisibleQuery(fullQuery){
-  const clean = fullQuery
-    .replace(/Devuélveme[\\s\\S]*/i, '')   // elimina la parte técnica
-    .replace(/\s*,\s*/g, ', ')             // limpia comas
-    .replace(/\.\./g, '.')                 // puntos dobles
-    .trim()
-    .replace(/^Busco/i, 'Buscando');       // tono más humano
-  
-  // Asegura que termina con un punto o puntos suspensivos
-  if(!/[.!?…]$/.test(clean)) return clean + '...';
-  return clean;
-}
-
 
 /* ===================== BUSCAR / RESULTADOS ===================== */
 function resultsActions(){
@@ -371,8 +355,7 @@ async function runSearch(query, append){
 
   if(!append){
     currentState = STATE.SEARCHING;
-    clearTransient(); const visibleText = makeUserVisibleQuery(query);
-appendMsg('user', visibleText);
+    clearTransient(); appendMsg('user', query);
     chatHistory.push({role:'user', content:query});
     showSkeletons();
   }else{
@@ -478,3 +461,5 @@ document.addEventListener('DOMContentLoaded', renderLanding);
 </script>
 </body>
 </html>
+
+
