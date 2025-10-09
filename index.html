@@ -6,41 +6,75 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-    html, body { height: 100%; margin: 0; padding: 0; width: 100%; }
-    body { font-family: 'Poppins', Arial, sans-serif; background-color: #1a1a2e; display: flex; justify-content: center; align-items: flex-start; }
-    #main-wrapper { width: 100%; max-width: 700px; min-height: 100vh; display: flex; flex-direction: column; background-color: #24243e; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
-    #chat-header { display: flex; align-items: center; padding: 10px 15px; background-color: #1a1a2e; border-bottom: 1px solid #33334f; color: white; }
+    :root { --main-bg: #1a1a2e; --chat-bg: #24243e; --bot-bubble: #3f3f5f; --user-bubble: #4e44b0; --highlight: #ffcc00; --text-primary: #e0e0e0; --text-secondary: #aaa; --border-color: #33334f; }
+    html, body { height: 100%; margin: 0; padding: 0; width: 100%; font-family: 'Poppins', Arial, sans-serif; background-color: var(--main-bg); }
+    body { display: flex; justify-content: center; align-items: flex-start; }
+    #main-wrapper { width: 100%; max-width: 700px; min-height: 100vh; display: flex; flex-direction: column; background-color: var(--chat-bg); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+    #chat-header { display: flex; align-items: center; padding: 10px 15px; background-color: var(--main-bg); border-bottom: 1px solid var(--border-color); color: white; position: sticky; top: 0; z-index: 10; }
     #chat-header span { font-size: 24px; margin-right: 12px; }
     #chat-header h1 { font-size: 18px; font-weight: 600; margin: 0; }
     #chat-container { flex-grow: 1; padding: 15px; overflow-y: scroll; display: flex; flex-direction: column; gap: 10px; }
-    .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; word-wrap: break-word; }
-    .user { background-color: #4e44b0; color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
-    .bot { background-color: #3f3f5f; color: #e0e0e0; align-self: flex-start; border-bottom-left-radius: 5px; }
-    .bot strong { color: #ffcc00; }
-    #input-container { display: flex; padding: 10px; border-top: 1px solid #33334f; background-color: #24243e; position: sticky; bottom: 0; }
-    #user-input { flex-grow: 1; padding: 10px 15px; border: none; border-radius: 25px; background-color: #33334f; color: white; font-size: 16px; margin-right: 10px; outline: none; }
-    #send-button { background-color: #4e44b0; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.3s; }
-    #send-button:hover:not(:disabled) { background-color: #6a5bcd; }
-    #send-button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #ffcc00; width: 25px; height: 25px; animation: spin 1s linear infinite; align-self: flex-start; margin: 10px 15px; }
-    
-    /* --- ESTILOS PARA LAS TARJETAS DE PRODUCTO --- */
+    .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; word-wrap: break-word; line-height: 1.5; }
+    .user { background-color: var(--user-bubble); color: white; align-self: flex-end; border-bottom-right-radius: 5px; }
+    .bot { background-color: var(--bot-bubble); color: var(--text-primary); align-self: flex-start; border-bottom-left-radius: 5px; }
+    .bot strong { color: var(--highlight); }
     .cards-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; width: 100%; padding-top: 10px; }
-    .product-card { background-color: #3f3f5f; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: #e0e0e0; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #4a4a6a; }
+    .product-card { background-color: var(--bot-bubble); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: var(--text-primary); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #4a4a6a; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
     .product-image { width: 100%; height: 140px; background-color: #2e2e48; object-fit: cover; }
-    .product-details { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; height: 110px; }
+    .product-details { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; height: 120px; }
     .product-title { font-size: 14px; font-weight: 600; line-height: 1.3; margin: 0 0 5px 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
     .product-info-bottom { margin-top: auto; }
-    .product-price { font-size: 16px; font-weight: 700; color: #ffcc00; }
-    .product-store { font-size: 12px; color: #aaa; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .product-price { font-size: 16px; font-weight: 700; color: var(--highlight); }
+    .product-store { font-size: 12px; color: var(--text-secondary); }
+    #input-container { display: flex; padding: 10px; border-top: 1px solid var(--border-color); background-color: var(--chat-bg); position: sticky; bottom: 0; }
+    #user-input { flex-grow: 1; padding: 10px 15px; border: none; border-radius: 25px; background-color: #33334f; color: white; font-size: 16px; margin-right: 10px; outline: none; }
+    #send-button { background-color: var(--user-bubble); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.3s; }
+    #send-button:hover:not(:disabled) { background-color: #6a5bcd; }
+
+    /* === Gregario Enhancements CSS === */
+    .ge-row { display:flex; flex-wrap:wrap; gap:.5rem; margin:12px 10px 4px 10px; }
+    .ge-chip {
+        background: rgba(255,255,255,.08); color:#ddd; border:1px solid rgba(255,255,255,.12);
+        padding:6px 12px; border-radius:999px; font-size:.9rem; cursor:pointer; user-select:none;
+        transition:transform .06s ease, background .2s ease;
+    }
+    .ge-chip:hover { transform: translateY(-1px); background: rgba(255,255,255,.12); }
+    .ge-group { display:flex; align-items:center; gap:.5rem; margin-top: 8px; }
+    .ge-group::before { content: attr(data-label); color:#9aa; font-size:.78rem; margin-right:6px; }
+    .ge-cta { display:flex; gap:.5rem; justify-content:center; margin:10px auto 0 auto; }
+    .ge-btn {
+        background:#5a4ae3; color:#fff; border:none; border-radius:10px; padding:8px 12px;
+        font-size:.95rem; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,.25);
+    }
+    .ge-btn:hover { filter:brightness(1.1); }
+    .ge-skeletons { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:15px; padding-top:10px; }
+    .ge-skel {
+        background: linear-gradient(90deg, var(--bot-bubble) 25%, #4a4a6a 37%, var(--bot-bubble) 63%);
+        background-size: 400% 100%; animation: geShimmer 1.4s infinite; border-radius:12px; height:282px;
+    }
+    @keyframes geShimmer { 0% {background-position: 100% 0} 100% {background-position: -100% 0} }
 </style>
 </head>
 <body>
+
 <div id="main-wrapper">
     <div id="chat-header"><span>⚙️</span><h1>Tu Gregario de Ciclismo Online</h1></div>
-    <div id="chat-container"></div>
+    <div id="chat-container">
+        </div>
+
+    <div id="gregario-enhancements">
+        <div id="ge-intents" class="ge-row"></div>
+        <div id="ge-refine" class="ge-row">
+            <div class="ge-group" data-group="disciplina"></div>
+            <div class="ge-group" data-group="talla"></div>
+            <div class="ge-group" data-group="precio"></div>
+        </div>
+        <div id="ge-cta" class="ge-cta" style="display:none;">
+            <button class="ge-btn" data-action="more">Ver más similares</button>
+            <button class="ge-btn" data-action="price">Ajustar precio</button>
+        </div>
+    </div>
     <div id="input-container">
         <input type="text" id="user-input" placeholder="Pregúntale a Tu Gregario..." autofocus>
         <button id="send-button"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.873L5.999 12zm0 0h7.5" /></svg></button>
@@ -48,6 +82,7 @@
 </div>
 
 <script>
+    // ================== CÓDIGO ORIGINAL DEL CHATBOT ==================
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const chatContainer = document.getElementById('chat-container');
@@ -63,19 +98,16 @@
     
     function renderProductCards(products) {
         if (!products || products.length === 0) return;
-
         const container = document.createElement('div');
+        container.id = 'products-grid'; // ID para que lo encuentre el módulo de enhancements
         container.className = 'cards-container';
-
         products.forEach(product => {
             const cardLink = document.createElement('a');
             cardLink.href = product.url;
             cardLink.target = '_blank';
             cardLink.rel = 'noopener noreferrer';
             cardLink.className = 'product-card';
-
-            const placeholderImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // Imagen transparente
-
+            const placeholderImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
             cardLink.innerHTML = `
                 <img src="${product.imagen || placeholderImage}" class="product-image" alt="${product.nombre}" onerror="this.style.display='none';">
                 <div class="product-details">
@@ -84,11 +116,9 @@
                         <div class="product-price">${product.precio}</div>
                         <div class="product-store">${product.tienda}</div>
                     </div>
-                </div>
-            `;
+                </div>`;
             container.appendChild(cardLink);
         });
-        
         chatContainer.appendChild(container);
         scrollToBottom();
     }
@@ -97,50 +127,31 @@
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    async function sendMessage() {
-        const message = userInput.value.trim();
+    async function sendMessage(messageText = null) {
+        const message = messageText !== null ? messageText : userInput.value.trim();
         if (message === '') return;
-
         setLoading(true);
         appendMessage('user', message);
         chatHistory.push({ role: 'user', content: message });
-        userInput.value = '';
-
-        const spinner = document.createElement('div');
-        spinner.className = 'spinner';
-        spinner.id = 'loading-spinner';
-        chatContainer.appendChild(spinner);
-        scrollToBottom();
-        
+        if(messageText === null) userInput.value = '';
         const CLOUD_FUNCTION_URL = 'https://gregario-chatbot-738677149871.europe-west1.run.app';
-
         try {
             const response = await fetch(CLOUD_FUNCTION_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chatHistory: chatHistory })
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.responseText || `Error HTTP: ${response.status}`);
-            }
-            
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
             const data = await response.json();
-            document.getElementById('loading-spinner')?.remove();
-
             if (data.success) {
                 chatHistory.push({ role: 'assistant', content: data.responseText });
-                
                 appendMessage('bot', data.responseText);
                 renderProductCards(data.products);
             } else {
                 appendMessage('bot', 'Error del servidor: ' + data.responseText);
             }
-
         } catch (error) {
             console.error('Error de Fetch:', error);
-            document.getElementById('loading-spinner')?.remove();
             appendMessage('bot', 'Disculpa, ha ocurrido un error de conexión.');
         } finally {
             setLoading(false);
@@ -153,14 +164,169 @@
         if (!isLoading) userInput.focus();
     }
 
-    sendButton.addEventListener('click', sendMessage);
-    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    sendButton.addEventListener('click', () => sendMessage(null));
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(null); });
 
     document.addEventListener('DOMContentLoaded', () => {
-        const welcomeMessage = "<strong>¡Hola! Soy Tu Gregario, tu asistente experto de Ciclismo Online.</strong> 🚴<br><br>Ahora busco ofertas en eBay de varios países para darte más opciones.<br><br><strong>Dime qué buscas</strong> y me pongo a ello.";
+        const welcomeMessage = "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en varios eBay por ti.<br><br><strong>¿Qué necesitas hoy?</strong>";
         appendMessage('bot', welcomeMessage);
         userInput.focus();
     });
 </script>
+
+<script>
+/* ================= Gregario Enhancements JS =================
+   Módulo de mejora de UX. Encapsulado y no invasivo. */
+(function(){
+    const CONFIG = {
+        enableIntents: true,
+        enableRefineChips: true,
+        enableSkeletons: true,
+        enableCTA: true,
+        intents: ["Casco","Maillot","Culotte","Zapatillas","Gafas","Luces","Rodillo","Geles"],
+        refine: {
+            disciplina: { label:"Disciplina", chips:["Carretera","MTB","Gravel","Triatlón"] },
+            talla:      { label:"Talla",      chips:["S","M","L","XL"] },
+            precio:     { label:"Precio",     chips:["< 50€","50–100€","100–200€","> 200€"] },
+        },
+        selectors: {
+            input:       "#user-input",
+            sendBtn:     "#send-button",
+            productGrid: "#products-grid",
+            chatContainer: "#chat-container",
+        },
+        assistantSearchCue: "He encontrado estas opciones",
+    };
+
+    const qs = (sel) => document.querySelector(sel);
+    const getInput = () => qs(CONFIG.selectors.input);
+    const getSendBtn = () => qs(CONFIG.selectors.sendBtn);
+    
+    function localSendMessage(text){
+        const input = getInput(); const btn = getSendBtn();
+        if(!input || !btn) return console.warn("[Gregario] No encuentro input o botón de envío.");
+        // Simula la interacción del usuario para que se integre con la lógica original
+        input.value = text;
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+        btn.click();
+    }
+
+    let skelNode=null;
+    function showSkeletons(count=6){
+        if(!CONFIG.enableSkeletons || skelNode) return;
+        const container = qs(CONFIG.selectors.chatContainer);
+        const wrap = document.createElement('div');
+        wrap.className = "ge-skeletons"; wrap.id = "ge-skeletons-wrapper";
+        for(let i=0;i<count;i++){ const s=document.createElement('div'); s.className="ge-skel"; wrap.appendChild(s); }
+        container.appendChild(wrap);
+        skelNode = wrap;
+        container.scrollTop = container.scrollHeight;
+    }
+    function hideSkeletons(){
+        if(skelNode) { skelNode.remove(); skelNode=null; }
+    }
+
+    function mountIntents(){
+        if(!CONFIG.enableIntents) return;
+        const root = qs('#ge-intents'); if(!root) return;
+        root.innerHTML = ""; CONFIG.intents.forEach(label=>{
+            const chip = document.createElement('span');
+            chip.className = "ge-chip"; chip.textContent = label;
+            chip.addEventListener('click', ()=>{
+                localSendMessage(`Necesito ${label.toLowerCase()}`);
+                root.style.display = 'none'; // Oculta intents iniciales
+                qs('#ge-refine').style.display = 'flex'; // Muestra refine
+            });
+            root.appendChild(chip);
+        });
+    }
+
+    function mountRefine(){
+        if(!CONFIG.enableRefineChips) return;
+        const row = qs('#ge-refine'); if(!row) return;
+        row.querySelectorAll('.ge-group').forEach(g=>g.innerHTML="");
+        Object.entries(CONFIG.refine).forEach(([key,def])=>{
+            const slot = row.querySelector(`.ge-group[data-group="${key}"]`);
+            if(!slot) return;
+            slot.setAttribute('data-label', def.label);
+            def.chips.forEach(c=>{
+                const chip = document.createElement('span');
+                chip.className = "ge-chip"; chip.textContent = c;
+                chip.addEventListener('click', ()=>{
+                    let msg = "";
+                    if(key==="disciplina") msg = `Es para ${c.toLowerCase()}`;
+                    else if(key==="talla") msg = `Talla ${c}`;
+                    else if(key==="precio") msg = `Mi presupuesto es ${c.replace('€','')}`;
+                    localSendMessage(msg);
+                });
+                slot.appendChild(chip);
+            });
+        });
+    }
+
+    function mountCTA(){
+        if(!CONFIG.enableCTA) return;
+        const node = qs('#ge-cta'); if(node) node.style.display = "flex";
+    }
+    function hideCTA(){
+        const node = qs('#ge-cta'); if(node) node.style.display = "none";
+    }
+    function wireCTA(){
+        qs('#ge-cta')?.addEventListener('click', (e)=>{
+            const btn = e.target.closest('button.ge-btn'); if(!btn) return;
+            const action = btn.dataset.action;
+            if(action==="more") localSendMessage("Muéstrame más opciones similares");
+            else if(action==="price") qs('#ge-refine .ge-group[data-group="precio"]')?.scrollIntoView({behavior:"smooth", block:"center"});
+        });
+    }
+
+    function observeAssistant(){
+        const chat = qs(CONFIG.selectors.chatContainer);
+        const obs = new MutationObserver((mutations)=>{
+            for(const mutation of mutations) {
+                if (mutation.addedNodes.length) {
+                    const lastNode = mutation.addedNodes[mutation.addedNodes.length - 1];
+                    if (lastNode.nodeType === 1 && lastNode.textContent.includes(CONFIG.assistantSearchCue)) {
+                        hideSkeletons();
+                        mountCTA();
+                        return; // Procesa solo una vez
+                    }
+                }
+            }
+        });
+        obs.observe(chat, {childList:true});
+    }
+
+    function hookSend(){
+        const btn = getSendBtn(); if(!btn) return;
+        const handler = () => {
+            const input = getInput();
+            if (input.value.trim() === '') return;
+            hideCTA();
+            qs('#ge-refine').style.display = 'none'; // Oculta refine al enviar
+            showSkeletons();
+        };
+        btn.addEventListener('click', handler);
+        getInput().addEventListener('keydown', (e) => {
+            if(e.key==="Enter" && !e.shiftKey) setTimeout(handler, 0);
+        });
+    }
+
+    function init(){
+        const shell = qs('#gregario-enhancements');
+        if(shell) shell.style.display = "block";
+        qs('#ge-refine').style.display = 'none'; // Oculto por defecto
+        mountIntents();
+        wireCTA();
+        hookSend();
+        observeAssistant();
+    }
+    
+    // Inicia el módulo de enhancements cuando el DOM esté listo
+    if(document.readyState !== "loading") init();
+    else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
 </body>
 </html>
