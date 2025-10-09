@@ -29,19 +29,28 @@
     #input-container { display: flex; padding: 10px; border-top: 1px solid var(--border-color); background-color: var(--chat-bg); position: sticky; bottom: 0; }
     #user-input { flex-grow: 1; padding: 10px 15px; border: none; border-radius: 25px; background-color: #33334f; color: white; font-size: 16px; margin-right: 10px; outline: none; }
     #send-button { background-color: var(--user-bubble); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.3s; }
-    
-    /* === NUEVOS ESTILOS PARA LA INTERFAZ INTERACTIVA === */
+
+    /* === INTERFAZ INTERACTIVA (existente) === */
     .chips-container { display: flex; flex-direction: column; gap: 12px; align-self: flex-start; width: 100%; margin-top: 12px; }
     .chips-row { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
     .chip { background: rgba(255,255,255,.08); color:#ddd; border:1px solid rgba(255,255,255,.12); padding:8px 14px; border-radius:999px; font-size:.9rem; cursor:pointer; user-select:none; transition: all .2s ease; }
     .chip:hover { transform: translateY(-1px); background: rgba(255,255,255,.12); }
     .chip.selected { background-color: var(--user-bubble); border-color: #8d85f3; color: white; }
-    .chips-group-label { color:#9aa; font-size:.8rem; margin-right:8px; width: 70px; text-align: right;}
+    .chips-group-label { color:#9aa; font-size:.8rem; margin-right:8px; width: 90px; text-align: right;}
     .apply-filters-btn { background: #5a4ae3; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: .95rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.25); width: 100%; margin-top: 10px; font-weight: 600; }
     .apply-filters-btn:hover { filter: brightness(1.1); }
     .ge-skeletons { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:15px; padding-top:10px; width: 100%;}
     .ge-skel { background: linear-gradient(90deg, var(--bot-bubble) 25%, #4a4a6a 37%, var(--bot-bubble) 63%); background-size: 400% 100%; animation: geShimmer 1.4s infinite; border-radius:12px; height:282px; }
     @keyframes geShimmer { 0% {background-position: 100% 0} 100% {background-position: -100% 0} }
+
+    /* === NUEVO: Modal “Más categorías” === */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .modal { background: var(--chat-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; max-width: 640px; width: calc(100% - 32px); box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px; }
+    .modal-title { color:#fff; font-size: 16px; font-weight: 600; }
+    .modal-close { background: transparent; color:#ddd; border:1px solid rgba(255,255,255,.2); padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .modal-content { display:flex; flex-wrap:wrap; gap:.5rem; max-height: 60vh; overflow:auto; }
+    .chip.plus { border-style: dashed; }
 </style>
 </head>
 <body>
@@ -55,26 +64,128 @@
     </div>
 </div>
 
+<!-- Modal Más Categorías -->
+<div id="more-cats-backdrop" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Más categorías</div>
+      <button id="modal-close" class="modal-close">Cerrar</button>
+    </div>
+    <div id="more-cats-content" class="modal-content"></div>
+  </div>
+</div>
+
 <script>
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const chatContainer = document.getElementById('chat-container');
+
+    const modalBackdrop = document.getElementById('more-cats-backdrop');
+    const modalCloseBtn = document.getElementById('modal-close');
+    const modalContent = document.getElementById('more-cats-content');
+
     let chatHistory = [];
-    let activeFilters = {}; // Almacena los filtros seleccionados
+    let activeFilters = {};        // filtros seleccionados actuales
+    let activeCategory = null;     // categoría activa
+    let modeFallback = false;      // si no hay facetas definidas para la categoría
 
     const CONFIG = {
         intents: [
-            'GPS / Ciclocomputadores', 'Rodillos Inteligentes', 'Potenciómetros', 'Ruedas', 
-            'Cascos', 'Zapatillas', 'Culottes', 'Chaquetas', 'Luces Potentes', 'Nutrición'
+            'GPS / Ciclocomputadores', 'Rodillos Inteligentes', 'Potenciómetros', 'Ruedas',
+            'Cascos', 'Zapatillas', 'Culottes', 'Chaquetas', 'Luces Potentes', 'Nutrición',
+            '+' // botón de descubrimiento
         ],
-        refine: {
-            disciplina: { label:"Disciplina", chips:["Carretera","MTB","Gravel"] },
-            talla:      { label:"Talla",      chips:["S","M","L","XL"] },
-            precio:     { label:"Precio",     chips:["< 50€","50–100€","100–200€"] },
-        },
         CLOUD_FUNCTION_URL: 'https://gregario-chatbot-738677149871.europe-west1.run.app'
     };
-    
+
+    // === Mapeo de facetas por categoría (ampliado) ===
+    const FACETS_BY_CATEGORY = {
+      'Culottes': {
+        Disciplina: ['Carretera','MTB','Gravel','Indoor'],
+        Talla: ['XS','S','M','L','XL','XXL'],
+        Temporada: ['Verano','Invierno','Todo el año'],
+        Badana: ['4–6h','6–8h','+8h','Triatlón'],
+        Material: ['Lycra','Compresión','Térmico','Impermeable'],
+        Precio: ['<50€','50–100€','100–150€','150–200€','200–300€','+300€']
+      },
+      'Cascos': {
+        Disciplina: ['Carretera','MTB','Gravel','Enduro','Urbano'],
+        Talla: ['S','M','L','XL'],
+        Seguridad: ['MIPS','SPIN','WaveCel','KinetiCore'],
+        Peso: ['<250g','250–300g','300–350g','+350g'],
+        Precio: ['<60€','60–100€','100–150€','150–200€','200–300€','+300€']
+      },
+      'Zapatillas': {
+        Disciplina: ['Carretera','MTB','Gravel','Triatlón'],
+        'Talla EU': ['38','39','40','41','42','43','44','45','46','47'],
+        Cala: ['SPD','SPD-SL','Look KEO'],
+        Rigidez: ['Normal','Alta','Carbono'],
+        Ventilación: ['Alta','Media','Cerrada'],
+        Precio: ['<80€','80–120€','120–180€','180–250€','+250€']
+      },
+      'GPS / Ciclocomputadores': {
+        Navegación: ['Mapas','Seguimiento básico'],
+        Conectividad: ['ANT+/BT','WiFi'],
+        Métricas: ['Potenciómetro','Entrenos','Segmentos'],
+        Precio: ['<100€','100–200€','200–300€','300–500€','+500€']
+      },
+      'Rodillos Inteligentes': {
+        Tipo: ['Directo','Wheel-on'],
+        Apps: ['Zwift','Rouvy','TrainerRoad'],
+        Potencia: ['1000W+','1500W+','2000W+'],
+        Simulación: ['12%+','16%+','20%+'],
+        Precio: ['<300€','300–500€','500–800€','800–1200€','+1200€']
+      },
+      'Potenciómetros': {
+        Tipo: ['Biela','Pedal','Spider','Buje'],
+        Compatibilidad: ['Shimano','SRAM','Rotor','Campagnolo'],
+        Medición: ['1 lado','2 lados'],
+        'Longitud biela': ['165','170','172.5','175'],
+        Precisión: ['±1%','±2%','±3%'],
+        Precio: ['<300€','300–500€','500–800€','800–1200€','+1200€']
+      },
+      'Ruedas': {
+        Tamaño: ['700C','29"','27.5"'],
+        Freno: ['Disco','Zapata'],
+        Material: ['Aluminio','Carbono'],
+        Tubeless: ['Sí','No'],
+        Precio: ['<200€','200–400€','400–700€','700–1200€','+1200€']
+      },
+      'Luces Potentes': {
+        Lúmenes: ['300+','600+','1000+'],
+        Autonomía: ['<2h','2–4h','4h+'],
+        Montaje: ['Manillar','Casco'],
+        Precio: ['<30€','30–60€','60–100€','100–150€','+150€']
+      },
+      'Chaquetas': {
+        Disciplina: ['Carretera','MTB','Gravel','Urbano'],
+        Talla: ['XS','S','M','L','XL','XXL'],
+        Estación: ['Invierno','Entretiempo','Lluvia'],
+        Membrana: ['>5.000 mm','>10.000 mm','>20.000 mm'],
+        Precio: ['<60€','60–100€','100–150€','150–200€','200–300€','+300€']
+      },
+      'Nutrición': {
+        Tipo: ['Gel','Barrita','Isotónica','Recuperador'],
+        CarboHora: ['30–60g','60–90g'],
+        Cafeína: ['Sí','No'],
+        Precio: ['<10€','10–20€','20–40€','40–80€','+80€']
+      }
+    };
+
+    // Categorías extra monetizables para el “+”
+    const EXTRA_CATEGORIES = [
+      'Gafas','Guantes','Camisetas interiores','Chubasqueros','Calcetines térmicos',
+      'Multiherramientas','Bombas / CO₂','Kits tubeless','Cadenas','Pastillas de freno',
+      'Lubricantes','Ceras','Limpiadores','Portabidones','Bidones',
+      'Soportes móvil/GPS','Luces traseras','Cintas de manillar','Puños',
+      'Sensores HR/Vel/Cad'
+    ];
+
+    // Filtros mínimos globales para fallback
+    const GLOBAL_MIN_FILTERS = {
+      Precio: ['<50€','50–100€','100–200€','200–300€','+300€']
+    };
+
     // --- LÓGICA PRINCIPAL ---
 
     async function sendMessage(messageText = null) {
@@ -86,9 +197,12 @@
         appendMessage('user', message);
         chatHistory.push({ role: 'user', content: message });
         if(messageText === null) userInput.value = '';
-        
+
         showLoadingSkeletons();
-        
+
+        // actualizar categoría activa si detectamos “Busco …”
+        detectActiveCategoryFromMessage(message);
+
         try {
             const response = await fetch(CONFIG.CLOUD_FUNCTION_URL, {
                 method: 'POST',
@@ -98,22 +212,22 @@
 
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
             const data = await response.json();
-            
+
             removeLoadingSkeletons();
 
             if (data.success) {
                 chatHistory.push({ role: 'assistant', content: data.responseText });
                 appendMessage('bot', data.responseText);
-                
+
                 if (data.products && data.products.length > 0) {
                     renderProductCards(data.products);
                 } else {
+                    // Sin productos -> ofrece refinar según categoría/fallback
                     showRefinementChips();
                 }
             } else {
                 appendMessage('bot', 'Error del servidor: ' + data.responseText);
             }
-
         } catch (error) {
             console.error('Error de Fetch:', error);
             removeLoadingSkeletons();
@@ -132,112 +246,316 @@
         chatContainer.appendChild(messageElement);
         scrollToBottom();
     }
-    
+
     function renderProductCards(products) {
-        // (código sin cambios)
+        const container = document.createElement('div');
+        container.className = 'cards-container';
+
+        products.forEach(p => {
+            const a = document.createElement('a');
+            a.className = 'product-card';
+            a.href = p.url || '#';
+            a.target = '_blank';
+            a.rel = 'nofollow sponsored noopener';
+
+            const img = document.createElement('img');
+            img.className = 'product-image';
+            img.src = p.imagen || '';
+            img.alt = p.nombre || 'Producto';
+
+            const details = document.createElement('div');
+            details.className = 'product-details';
+
+            const title = document.createElement('div');
+            title.className = 'product-title';
+            title.textContent = p.nombre || '';
+
+            const bottom = document.createElement('div');
+            bottom.className = 'product-info-bottom';
+
+            const price = document.createElement('div');
+            price.className = 'product-price';
+            price.textContent = p.precio || '';
+
+            const store = document.createElement('div');
+            store.className = 'product-store';
+            store.textContent = p.tienda ? `eBay ${p.tienda}` : 'eBay';
+
+            bottom.appendChild(price);
+            bottom.appendChild(store);
+            details.appendChild(title);
+            details.appendChild(bottom);
+
+            a.appendChild(img);
+            a.appendChild(details);
+            container.appendChild(a);
+        });
+
+        chatContainer.appendChild(container);
+        scrollToBottom();
     }
-    
+
     function showInitialIntentChips() {
-        const chips = CONFIG.intents.map(label => ({ label, value: `Busco ${label}` }));
-        const chipsElement = createChipsRow(chips, false); // false = no es multiselección
-        
+        const chips = CONFIG.intents.map(label => ({ label, value: label }));
+        const chipsElement = createCategoryChipsRow(chips);
+
         const container = document.createElement('div');
         container.className = 'chips-container';
         container.id = 'chips-container';
         container.appendChild(chipsElement);
-        
+
         chatContainer.appendChild(container);
         scrollToBottom();
     }
-    
+
+    function createCategoryChipsRow(chips) {
+        const row = document.createElement('div');
+        row.className = 'chips-row';
+
+        chips.forEach(ch => {
+            const chip = document.createElement('div');
+            chip.className = 'chip' + (ch.label === '+' ? ' plus' : '');
+            chip.innerText = ch.label;
+
+            if (ch.label === '+') {
+                chip.onclick = openMoreCategories;
+            } else {
+                chip.onclick = () => {
+                    // set categoría activa y enviar mensaje “Busco X”
+                    activeCategory = ch.label;
+                    modeFallback = !FACETS_BY_CATEGORY[activeCategory];
+                    activeFilters = {};
+                    sendMessage(`Busco ${ch.label}`);
+                };
+            }
+            row.appendChild(chip);
+        });
+
+        return row;
+    }
+
+    function openMoreCategories() {
+        modalContent.innerHTML = '';
+
+        // chips de extra categories
+        EXTRA_CATEGORIES.forEach(cat => {
+          const chip = document.createElement('div');
+          chip.className = 'chip';
+          chip.innerText = cat;
+          chip.onclick = () => {
+            activeCategory = cat;
+            modeFallback = !FACETS_BY_CATEGORY[activeCategory]; // la mayoría irán por fallback
+            activeFilters = {};
+            closeModal();
+            sendMessage(`Busco ${cat}`);
+          };
+          modalContent.appendChild(chip);
+        });
+
+        // separador y “Otro producto…”
+        const other = document.createElement('div');
+        other.className = 'chip';
+        other.innerText = 'Otro producto…';
+        other.onclick = async () => {
+            const val = prompt('¿Qué producto quieres buscar? Escribe tu consulta:');
+            if (val && val.trim() !== '') {
+                activeCategory = null; // consulta libre
+                modeFallback = true;
+                activeFilters = {};
+                closeModal();
+                sendMessage(val.trim());
+            }
+        };
+        modalContent.appendChild(other);
+
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function closeModal() { modalBackdrop.style.display = 'none'; }
+    modalCloseBtn.onclick = closeModal;
+    modalBackdrop.onclick = (e) => { if (e.target === modalBackdrop) closeModal(); };
+
     function showRefinementChips() {
         activeFilters = {}; // Resetea filtros activos
         const container = document.createElement('div');
         container.className = 'chips-container';
         container.id = 'chips-container';
-        
-        Object.entries(CONFIG.refine).forEach(([key, def]) => {
-            const chipsData = def.chips.map(label => ({ label, value: label, group: key }));
-            const chipsRow = createChipsRow(chipsData, true, def.label); // true = multiselección
-            container.appendChild(chipsRow);
-        });
-        
+
+        // Determinar facetas a mostrar
+        const facets = FACETS_BY_CATEGORY[activeCategory];
+        if (activeCategory && facets) {
+            // Mostrar un máximo de 4 grupos y el resto detrás de “Más filtros”
+            const facetGroups = Object.entries(facets);
+            const FIRST_GROUPS_COUNT = 4;
+
+            facetGroups.slice(0, FIRST_GROUPS_COUNT).forEach(([group, chips]) => {
+                const chipsRow = createFacetRow(group, chips);
+                container.appendChild(chipsRow);
+            });
+
+            if (facetGroups.length > FIRST_GROUPS_COUNT) {
+                const moreBtn = document.createElement('button');
+                moreBtn.className = 'apply-filters-btn';
+                moreBtn.innerText = 'Más filtros';
+                let expanded = false;
+                moreBtn.onclick = () => {
+                    if (!expanded) {
+                        facetGroups.slice(FIRST_GROUPS_COUNT).forEach(([group, chips]) => {
+                            const chipsRow = createFacetRow(group, chips);
+                            container.appendChild(chipsRow);
+                        });
+                        moreBtn.innerText = 'Ocultar filtros';
+                        expanded = true;
+                        scrollToBottom();
+                    } else {
+                        // re-render básico: limpiar y volver a pintar primeros 4
+                        container.innerHTML = '';
+                        facetGroups.slice(0, FIRST_GROUPS_COUNT).forEach(([group, chips]) => {
+                            const chipsRow = createFacetRow(group, chips);
+                            container.appendChild(chipsRow);
+                        });
+                        container.appendChild(moreBtn);
+                        moreBtn.innerText = 'Más filtros';
+                        expanded = false;
+                        scrollToBottom();
+                    }
+                };
+                container.appendChild(moreBtn);
+            }
+
+        } else {
+            // Fallback UI: filtros mínimos globales (si los hay)
+            modeFallback = true;
+            Object.entries(GLOBAL_MIN_FILTERS).forEach(([group, chips]) => {
+                const chipsRow = createFacetRow(group, chips);
+                container.appendChild(chipsRow);
+            });
+        }
+
+        // Botón aplicar filtros
+        const applyBtn = document.createElement('button');
+        applyBtn.id = 'apply-filters-btn';
+        applyBtn.className = 'apply-filters-btn';
+        applyBtn.innerText = '✨ Aplicar Filtros y Buscar';
+        applyBtn.onclick = applyFilters;
+        container.appendChild(applyBtn);
+
         chatContainer.appendChild(container);
         scrollToBottom();
     }
-    
-    function createChipsRow(chipsData, isMultiSelect, label = null) {
+
+    function createFacetRow(label, chipsArr) {
         const row = document.createElement('div');
         row.className = 'chips-row';
 
-        if(label) {
-            const labelElement = document.createElement('span');
-            labelElement.className = 'chips-group-label';
-            labelElement.innerText = label;
-            row.appendChild(labelElement);
-        }
+        const labelElement = document.createElement('span');
+        labelElement.className = 'chips-group-label';
+        labelElement.innerText = label;
+        row.appendChild(labelElement);
 
-        chipsData.forEach(chipData => {
-            const chipElement = document.createElement('div');
-            chipElement.className = 'chip';
-            chipElement.innerText = chipData.label;
-
-            if (isMultiSelect) {
-                chipElement.onclick = () => handleRefinementClick(chipElement, chipData);
-            } else {
-                chipElement.onclick = () => sendMessage(chipData.value);
-            }
-            row.appendChild(chipElement);
+        chipsArr.forEach(labelChip => {
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+            chip.innerText = labelChip;
+            chip.onclick = () => handleRefinementClick(chip, { group: label, value: labelChip });
+            row.appendChild(chip);
         });
         return row;
     }
 
     function handleRefinementClick(chipElement, chipData) {
-        // Activa o desactiva el chip
         chipElement.classList.toggle('selected');
-        
-        // Actualiza el estado de los filtros
+
         if (chipElement.classList.contains('selected')) {
             activeFilters[chipData.group] = chipData.value;
         } else {
             delete activeFilters[chipData.group];
         }
-        
-        // Muestra u oculta el botón de "Aplicar"
-        const hasActiveFilters = Object.keys(activeFilters).length > 0;
-        let applyBtn = document.getElementById('apply-filters-btn');
-
-        if (hasActiveFilters && !applyBtn) {
-            applyBtn = document.createElement('button');
-            applyBtn.id = 'apply-filters-btn';
-            applyBtn.className = 'apply-filters-btn';
-            applyBtn.innerText = '✨ Aplicar Filtros y Buscar';
-            applyBtn.onclick = applyFilters;
-            document.getElementById('chips-container').appendChild(applyBtn);
-        } else if (!hasActiveFilters && applyBtn) {
-            applyBtn.remove();
-        }
     }
-    
-    function applyFilters() {
-        let messageParts = [];
-        const baseQuery = chatHistory.find(msg => msg.role === 'user' && msg.content.toLowerCase().startsWith('busco'))?.content || 'producto';
 
-        if (activeFilters.disciplina) messageParts.push(`para ${activeFilters.disciplina}`);
-        if (activeFilters.talla) messageParts.push(`en talla ${activeFilters.talla}`);
-        if (activeFilters.precio) messageParts.push(`con presupuesto ${activeFilters.precio.replace('€','')}`);
-        
-        const fullMessage = `${baseQuery} ${messageParts.join(' ')}`;
+    function applyFilters() {
+        const baseQuery = getLastUserSearchText() || inferBaseQuery();
+
+        // Construimos solo con filtros visibles (los de la categoría actual o globales)
+        const parts = [];
+
+        // Heurística de redacción simple para que el backend entienda:
+        for (const [k, v] of Object.entries(activeFilters)) {
+            if (/talla/i.test(k)) parts.push(`talla ${v}`);
+            else if (/precio/i.test(k)) parts.push(`precio ${v}`);
+            else if (/disciplina|tamaño|freno|material|tubeless|seguridad|peso|cala|rigidez|ventilación|apps|potencia|simulación|compatibilidad|medición|longitud biela|precisión|lúmenes|autonomía|montaje|membrana|estación|carbohora|cafeína|badana|material/i.test(k)) {
+                parts.push(`${k} ${v}`);
+            } else {
+                parts.push(`${k} ${v}`);
+            }
+        }
+
+        const fullMessage = parts.length ? `${baseQuery} ${parts.join(' ')}` : baseQuery;
         sendMessage(fullMessage);
     }
-    
-    function showLoadingSkeletons() { /* (código sin cambios) */ }
-    function removeLoadingSkeletons() { /* (código sin cambios) */ }
+
+    function getLastUserSearchText() {
+        // Busca el último "Busco ..." del historial para usarlo de base
+        for (let i = chatHistory.length - 1; i >= 0; i--) {
+            const m = chatHistory[i];
+            if (m.role === 'user' && /^busco\s/i.test(m.content)) {
+                return m.content;
+            }
+        }
+        return null;
+    }
+
+    function inferBaseQuery() {
+        // Si no existe "Busco ...", infiere desde activeCategory o usa “producto”
+        if (activeCategory) return `Busco ${activeCategory}`;
+        return 'Busco producto';
+    }
+
+    function detectActiveCategoryFromMessage(message) {
+        const m = message.trim().toLowerCase();
+        if (m.startsWith('busco')) {
+            // Intenta mapear a una categoría conocida
+            const cat = Object.keys(FACETS_BY_CATEGORY).find(k => m.includes(k.toLowerCase()));
+            activeCategory = cat || activeCategory;
+            modeFallback = !FACETS_BY_CATEGORY[activeCategory];
+            if (!cat && m.startsWith('busco ')) {
+                // si el usuario puso "Busco XXX" y no está en el mapeo, usa fallback
+                activeCategory = m.replace(/^busco\s+/,'').trim();
+                modeFallback = true;
+            }
+            activeFilters = {};
+        }
+    }
+
+    function showLoadingSkeletons() {
+        const container = document.createElement('div');
+        container.className = 'ge-skeletons';
+        container.id = 'loading-skeletons';
+        for (let i = 0; i < 6; i++) {
+            const sk = document.createElement('div');
+            sk.className = 'ge-skel';
+            container.appendChild(sk);
+        }
+        chatContainer.appendChild(container);
+        scrollToBottom();
+    }
+
+    function removeLoadingSkeletons() {
+        document.getElementById('loading-skeletons')?.remove();
+    }
+
     function removeExistingChips() {
         document.getElementById('chips-container')?.remove();
     }
-    function scrollToBottom() { /* (código sin cambios) */ }
-    function setLoading(isLoading) { /* (código sin cambios) */ }
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function setLoading(isLoading) {
+        sendButton.disabled = isLoading;
+        userInput.disabled = isLoading;
+    }
 
     // --- INICIALIZACIÓN ---
     sendButton.addEventListener('click', () => sendMessage(null));
@@ -253,5 +571,3 @@
 
 </body>
 </html>
-
-
