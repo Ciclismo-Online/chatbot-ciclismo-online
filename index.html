@@ -6,619 +6,578 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--main-bg:#1a1a2e;--chat-bg:#24243e;--bot-bubble:#3f3f5f;--user-bubble:#4e44b0;--highlight:#ffcc00;--text-primary:#e0e0e0;--text-secondary:#aaa;--border-color:#33334f;}
-  html,body{height:100%;margin:0;padding:0;width:100%;font-family:'Poppins',Arial,sans-serif;background-color:var(--main-bg);}
-  body{display:flex;justify-content:center;align-items:flex-start;}
-  #main-wrapper{width:100%;max-width:700px;min-height:100vh;display:flex;flex-direction:column;background-color:var(--chat-bg);box-shadow:0 4px 12px rgba(0,0,0,.5);}
-  #chat-header{display:flex;align-items:center;padding:10px 15px;background-color:var(--main-bg);border-bottom:1px solid var(--border-color);color:white;position:sticky;top:0;z-index:10;}
-  #chat-header h1{font-size:18px;font-weight:600;margin:0;}
-  #chat-container{flex-grow:1;padding:15px;overflow-y:scroll;display:flex;flex-direction:column;gap:10px;}
-  .message{padding:10px 15px;border-radius:20px;max-width:80%;word-wrap:break-word;line-height:1.5;}
-  .user{background-color:var(--user-bubble);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
-  .bot{background-color:var(--bot-bubble);color:var(--text-primary);align-self:flex-start;border-bottom-left-radius:5px;}
-  .bot strong{color:var(--highlight);}
+  :root{--main-bg:#1a1a2e;--chat-bg:#24243e;--bot-bubble:#3f3f5f;--user-bubble:#4e44b0;--highlight:#ffcc00;--text-primary:#e0e0e0;--text-secondary:#aaa;--border-color:#33334f;}
+  html,body{height:100%;margin:0;padding:0;width:100%;font-family:'Poppins',Arial,sans-serif;background-color:var(--main-bg);}
+  body{display:flex;justify-content:center;align-items:flex-start;}
+  #main-wrapper{width:100%;max-width:700px;min-height:100vh;display:flex;flex-direction:column;background-color:var(--chat-bg);box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  #chat-header{display:flex;align-items:center;padding:10px 15px;background-color:var(--main-bg);border-bottom:1px solid var(--border-color);color:white;position:sticky;top:0;z-index:10;}
+  #chat-header h1{font-size:18px;font-weight:600;margin:0;}
+  #chat-container{flex-grow:1;padding:15px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+  .message{padding:10px 15px;border-radius:20px;max-width:80%;word-wrap:break-word;line-height:1.5;}
+  .user{background-color:var(--user-bubble);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
+  .bot{background-color:var(--bot-bubble);color:var(--text-primary);align-self:flex-start;border-bottom-left-radius:5px;}
+  .bot strong{color:var(--highlight);}
 
-  .cards-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;width:100%;padding-top:10px;}
-  .product-card{background-color:var(--bot-bubble);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:var(--text-primary);transition:transform .2s,box-shadow .2s;border:1px solid #4a4a6a;}
-  .product-card:hover{transform:translateY(-5px);box-shadow:0 6px 15px rgba(0,0,0,.4);}
-  .product-image{width:100%;height:140px;background-color:#2e2e48;object-fit:cover;}
-  .product-details{padding:10px;display:flex;flex-direction:column;flex-grow:1;justify-content:space-between;height:120px;}
-  .product-title{font-size:14px;font-weight:600;line-height:1.3;margin:0 0 5px 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;}
-  .product-info-bottom{margin-top:auto;}
-  .product-price{font-size:16px;font-weight:700;color:var(--highlight);}
-  .product-store{font-size:12px;color:var(--text-secondary);}
+  .cards-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;width:100%;padding-top:10px;}
+  .product-card{background-color:var(--bot-bubble);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:var(--text-primary);transition:transform .2s,box-shadow .2s;border:1px solid #4a4a6a;}
+  .product-card:hover{transform:translateY(-5px);box-shadow:0 6px 15px rgba(0,0,0,.4);}
+  .product-image{width:100%;height:140px;background-color:#2e2e48;object-fit:cover;}
+  .product-details{padding:10px;display:flex;flex-direction:column;flex-grow:1;justify-content:space-between;height:120px;}
+  .product-title{font-size:14px;font-weight:600;line-height:1.3;margin:0 0 5px 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;}
+  .product-info-bottom{margin-top:auto;}
+  .product-price{font-size:16px;font-weight:700;color:var(--highlight);}
+  .product-store{font-size:12px;color:var(--text-secondary);}
 
-  #input-container{display:flex;padding:10px;border-top:1px solid var(--border-color);background-color:var(--chat-bg);position:sticky;bottom:0;}
-  #user-input{flex-grow:1;padding:10px 15px;border:none;border-radius:25px;background-color:#33334f;color:white;font-size:16px;margin-right:10px;outline:none;}
-  #send-button{background-color:var(--user-bubble);color:white;border:none;border-radius:50%;width:45px;height:45px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background-color .3s;}
+  #input-container{display:flex;padding:10px;border-top:1px solid var(--border-color);background-color:var(--chat-bg);position:sticky;bottom:0;}
+  #user-input{flex-grow:1;padding:10px 15px;border:none;border-radius:25px;background-color:#33334f;color:white;font-size:16px;margin-right:10px;outline:none;}
+  #send-button{background-color:var(--user-bubble);color:white;border:none;border-radius:50%;width:45px;height:45px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background-color .3s;}
 
-  /* Chips / filtros */
-  .chips-container{display:flex;flex-direction:column;gap:12px;align-self:flex-start;width:100%;margin-top:12px;}
-  .chips-hint{color:#9aa;font-size:.85rem;margin:2px 0 4px 4px;}
-  .chips-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
-  .chip{background:rgba(255,255,255,.08);color:#ddd;border:1px solid rgba(255,255,255,.12);padding:8px 14px;border-radius:999px;font-size:.9rem;cursor:pointer;user-select:none;transition:all .2s ease;}
-  .chip:hover{transform:translateY(-1px);background:rgba(255,255,255,.12);}
-  .chip.selected{background-color:var(--user-bubble);border-color:#8d85f3;color:white;}
-  .chip.plus{border-style:dashed;}
-  .chips-group-label{color:#9aa;font-size:.8rem;margin-right:8px;width:90px;text-align:right;}
-  .apply-filters-btn{background:#5a4ae3;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.95rem;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.25);font-weight:600; flex-grow: 1; text-align: center;}
-  .clear-filters-btn{background:transparent;color:#bbb;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 12px;font-size:.85rem;cursor:pointer;}
+  /* Chips / filtros */
+  .chips-container{display:flex;flex-direction:column;gap:12px;align-self:flex-start;width:100%;margin-top:12px;}
+  .chips-hint{color:#9aa;font-size:.85rem;margin:2px 0 4px 4px;}
+  .chips-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
+  .chip{background:rgba(255,255,255,.08);color:#ddd;border:1px solid rgba(255,255,255,.12);padding:8px 14px;border-radius:999px;font-size:.9rem;cursor:pointer;user-select:none;transition:all .2s ease;}
+  .chip:hover{transform:translateY(-1px);background:rgba(255,255,255,.12);}
+  .chip.selected{background-color:var(--user-bubble);border-color:#8d85f3;color:white;}
+  .chip.plus{border-style:dashed;}
+  .chips-group-label{color:#9aa;font-size:.8rem;margin-right:8px;width:90px;text-align:right;}
+  .apply-filters-btn{background:#5a4ae3;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:.95rem;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.25);font-weight:600;}
+  .clear-filters-btn{background:transparent;color:#bbb;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 12px;font-size:.85rem;cursor:pointer;}
 
-  /* Skeletons */
-  .ge-skeletons{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;padding-top:10px;width:100%;}
-  .ge-skel{background:linear-gradient(90deg,var(--bot-bubble) 25%,#4a4a6a 37%,var(--bot-bubble) 63%);background-size:400% 100%;animation:geShimmer 1.4s infinite;border-radius:12px;height:282px;}
-  @keyframes geShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  /* Skeletons */
+  .ge-skeletons{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;padding-top:10px;width:100%;}
+  .ge-skel{background:linear-gradient(90deg,var(--bot-bubble) 25%,#4a4a6a 37%,var(--bot-bubble) 63%);background-size:400% 100%;animation:geShimmer 1.4s infinite;border-radius:12px;height:282px;}
+  @keyframes geShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
 
-  /* Modal “Más categorías” */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;}
-  .modal{background:var(--chat-bg);border:1px solid var(--border-color);border-radius:16px;padding:16px;max-width:640px;width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.45);}
-  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-  .modal-title{color:#fff;font-size:16px;font-weight:600;}
-  .modal-close{background:transparent;color:#ddd;border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:8px;cursor:pointer;}
-  .modal-content{display:flex;flex-wrap:wrap;gap:.5rem;max-height:60vh;overflow:auto;}
+  /* Modal “Más categorías” */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal{background:var(--chat-bg);border:1px solid var(--border-color);border-radius:16px;padding:16px;max-width:640px;width:calc(100% - 32px);box-shadow:0 10px 30px rgba(0,0,0,.45);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .modal-title{color:#fff;font-size:16px;font-weight:600;}
+  .modal-close{background:transparent;color:#ddd;border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:8px;cursor:pointer;}
+  .modal-content{display:flex;flex-wrap:wrap;gap:.5rem;max-height:60vh;overflow:auto;}
 
-  /* Botonera de resultados */
-  .results-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:10px;}
-  .results-actions .btn{background:#5a4ae3;border:none;color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.25);}
-  .results-actions .btn.secondary{background:transparent;color:#ddd;border:1px solid rgba(255,255,255,.2);}
-  .price-highlight{box-shadow:0 0 0 2px #ffd54f inset;animation:blink 1.2s ease 2;}
-  @keyframes blink{50%{box-shadow:0 0 0 2px transparent inset}}
+  /* Botonera de resultados */
+  .results-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:10px;}
+  .results-actions .btn{background:#5a4ae3;border:none;color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.25);}
+  .results-actions .btn.secondary{background:transparent;color:#ddd;border:1px solid rgba(255,255,255,.2);}
+  .price-highlight{box-shadow:0 0 0 2px #ffd54f inset;animation:blink 1.2s ease 2;}
+  @keyframes blink{50%{box-shadow:0 0 0 2px transparent inset}}
 </style>
 </head>
 <body>
 
 <div id="main-wrapper">
-  <div id="chat-header"><h1>Tu Gregario de Ciclismo Online</h1></div>
-  <div id="chat-container"></div>
-  <div id="input-container">
-    <input type="text" id="user-input" placeholder="Pregúntale a Tu Gregario..." autofocus>
-    <button id="send-button"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.873L5.999 12zm0 0h7.5"/></svg></button>
-  </div>
+  <div id="chat-header"><h1>Tu Gregario de Ciclismo Online</h1></div>
+  <div id="chat-container"></div>
+  <div id="input-container">
+    <input type="text" id="user-input" placeholder="Pregúntale a Tu Gregario..." autofocus>
+    <button id="send-button"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.873L5.999 12zm0 0h7.5"/></svg></button>
+  </div>
 </div>
 
+<!-- Modal Más Categorías -->
 <div id="more-cats-backdrop" class="modal-backdrop">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Más categorías</div>
-      <button id="modal-close" class="modal-close">Cerrar</button>
-    </div>
-    <div id="more-cats-content" class="modal-content"></div>
-  </div>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Más categorías</div>
+      <button id="modal-close" class="modal-close">Cerrar</button>
+    </div>
+    <div id="more-cats-content" class="modal-content"></div>
+  </div>
 </div>
 
 <script>
-  const userInput = document.getElementById('user-input');
-  const sendButton = document.getElementById('send-button');
-  const chatContainer = document.getElementById('chat-container');
+  // ======= Estado global (máquina simple) =======
+  const STATE = Object.freeze({ LANDING:'LANDING', FILTERS:'FILTERS', SEARCHING:'SEARCHING', RESULTS:'RESULTS', FALLBACK:'FALLBACK' });
+  let currentState = STATE.LANDING;
 
-  const modalBackdrop = document.getElementById('more-cats-backdrop');
-  const modalCloseBtn = document.getElementById('modal-close');
-  const modalContent = document.getElementById('more-cats-content');
+  const chatContainer = document.getElementById('chat-container');
+  const userInput = document.getElementById('user-input');
+  const sendButton = document.getElementById('send-button');
 
-  let chatHistory = [];
-  let activeFilters = {};
-  let activeCategory = null;
-  let modeFallback = false;
-  let moreFiltersExpanded = {};
-  let shownProductUrls = new Set();
-  let lastQueryMessage = '';
+  const modalBackdrop = document.getElementById('more-cats-backdrop');
+  const modalCloseBtn = document.getElementById('modal-close');
+  const modalContent = document.getElementById('more-cats-content');
 
-  const CONFIG = {
-    intents: [
-      'GPS / Ciclocomputadores','Rodillos Inteligentes','Potenciómetros','Ruedas',
-      'Cascos','Zapatillas','Culottes','Chaquetas','Luces Potentes','Nutrición','+'
-    ],
-    CLOUD_FUNCTION_URL: 'https://gregario-chatbot-738677149871.europe-west1.run.app'
-  };
+  // Conversación y búsqueda
+  let chatHistory = [];
+  let activeCategory = null;
+  let activeFilters = {};
+  let moreFiltersExpanded = {};
+  let shownProductUrls = new Set();
+  let lastQueryText = ''; // última consulta enviada al backend, para "Más resultados"
 
-  const FACETS_BY_CATEGORY = {
-    'Culottes': {
-      Disciplina:['Carretera','MTB','Gravel','Indoor'],
-      Talla:['XS','S','M','L','XL','XXL'],
-      Precio:['<50€','50–100€','100–150€','150–200€','200–300€','+300€'],
-      Badana:['4–6h','6–8h','+8h','Triatlón'],
-      Temporada:['Verano','Invierno','Todo el año'],
-      Material:['Lycra','Compresión','Térmico','Impermeable']
-    },
-    'Cascos': {
-      Disciplina:['Carretera','MTB','Gravel','Enduro','Urbano'],
-      Talla:['S','M','L','XL'],
-      Precio:['<60€','60–100€','100–150€','150–200€','200–300€','+300€'],
-      Seguridad:['MIPS','SPIN','WaveCel','KinetiCore'],
-      Peso:['<250g','250–300g','300–350g','+350g']
-    },
-    'Zapatillas': {
-      Disciplina:['Carretera','MTB','Gravel','Triatlón'],
-      'Talla EU':['38','39','40','41','42','43','44','45','46','47'],
-      Precio:['<80€','80–120€','120–180€','180–250€','+250€'],
-      Cala:['SPD','SPD-SL','Look KEO'],
-      Rigidez:['Normal','Alta','Carbono'],
-      Ventilación:['Alta','Media','Cerrada']
-    },
-    'GPS / Ciclocomputadores': {
-      Navegación:['Mapas','Seguimiento básico'],
-      Conectividad:['ANT+/BT','WiFi'],
-      Precio:['<100€','100–200€','200–300€','300–500€','+500€'],
-      Métricas:['Potenciómetro','Entrenos','Segmentos']
-    },
-    'Rodillos Inteligentes': {
-      Tipo:['Directo','Wheel-on'],
-      Apps:['Zwift','Rouvy','TrainerRoad'],
-      Precio:['<300€','300–500€','500–800€','800–1200€','+1200€'],
-      Potencia:['1000W+','1500W+','2000W+'],
-      Simulación:['12%+','16%+','20%+']
-    },
-    'Potenciómetros': {
-      Tipo:['Biela','Pedal','Spider','Buje'],
-      Compatibilidad:['Shimano','SRAM','Rotor','Campagnolo'],
-      Precio:['<300€','300–500€','500–800€','800–1200€','+1200€'],
-      Medición:['1 lado','2 lados'],
-      'Longitud biela':['165','170','172.5','175'],
-      Precisión:['±1%','±2%','±3%']
-    },
-    'Ruedas': {
-      Tamaño:['700C','29"','27.5"'],
-      Freno:['Disco','Zapata'],
-      Precio:['<200€','200–400€','400–700€','700–1200€','+1200€'],
-      Material:['Aluminio','Carbono'],
-      Tubeless:['Sí','No']
-    },
-    'Luces Potentes': {
-      Lúmenes:['300+','600+','1000+'],
-      Autonomía:['<2h','2–4h','4h+'],
-      Precio:['<30€','30–60€','60–100€','100–150€','+150€'],
-      Montaje:['Manillar','Casco']
-    },
-    'Chaquetas': {
-      Disciplina:['Carretera','MTB','Gravel','Urbano'],
-      Talla:['XS','S','M','L','XL','XXL'],
-      Precio:['<60€','60–100€','100–150€','150–200€','200–300€','+300€'],
-      Estación:['Invierno','Entretiempo','Lluvia'],
-      Membrana:['>5.000 mm','>10.000 mm','>20.000 mm']
-    },
-    'Nutrición': {
-      Tipo:['Gel','Barrita','Isotónica','Recuperador'],
-      CarboHora:['30–60g','60–90g'],
-      Precio:['<10€','10–20€','20–40€','40–80€','+80€'],
-      Cafeína:['Sí','No']
-    }
-  };
+  const CONFIG = {
+    intents: [
+      'GPS / Ciclocomputadores','Rodillos Inteligentes','Potenciómetros','Ruedas',
+      'Cascos','Zapatillas','Culottes','Chaquetas','Luces Potentes','Nutrición','+'
+    ],
+    CLOUD_FUNCTION_URL: 'https://gregario-chatbot-738677149871.europe-west1.run.app'
+  };
 
-  const EXTRA_CATEGORIES = [
-    'Gafas','Guantes','Camisetas interiores','Chubasqueros','Calcetines térmicos',
-    'Multiherramientas','Bombas / CO₂','Kits tubeless','Cadenas','Pastillas de freno',
-    'Lubricantes','Ceras','Limpiadores','Portabidones','Bidones',
-    'Soportes móvil/GPS','Luces traseras','Cintas de manillar','Puños',
-    'Sensores HR/Vel/Cad'
-  ];
+  // Facetas (Precio priorizada visualmente)
+  const FACETS_BY_CATEGORY = {
+    'Culottes': {
+      Disciplina:['Carretera','MTB','Gravel','Indoor'],
+      Talla:['XS','S','M','L','XL','XXL'],
+      Precio:['<50€','50–100€','100–150€','150–200€','200–300€','+300€'],
+      Badana:['4–6h','6–8h','+8h','Triatlón'],
+      Temporada:['Verano','Invierno','Todo el año'],
+      Material:['Lycra','Compresión','Térmico','Impermeable']
+    },
+    'Cascos': {
+      Disciplina:['Carretera','MTB','Gravel','Enduro','Urbano'],
+      Talla:['S','M','L','XL'],
+      Precio:['<60€','60–100€','100–150€','150–200€','200–300€','+300€'],
+      Seguridad:['MIPS','SPIN','WaveCel','KinetiCore'],
+      Peso:['<250g','250–300g','300–350g','+350g']
+    },
+    'Zapatillas': {
+      Disciplina:['Carretera','MTB','Gravel','Triatlón'],
+      'Talla EU':['38','39','40','41','42','43','44','45','46','47'],
+      Precio:['<80€','80–120€','120–180€','180–250€','+250€'],
+      Cala:['SPD','SPD-SL','Look KEO'],
+      Rigidez:['Normal','Alta','Carbono'],
+      Ventilación:['Alta','Media','Cerrada']
+    },
+    'GPS / Ciclocomputadores': {
+      Navegación:['Mapas','Seguimiento básico'],
+      Conectividad:['ANT+/BT','WiFi'],
+      Precio:['<100€','100–200€','200–300€','300–500€','+500€'],
+      Métricas:['Potenciómetro','Entrenos','Segmentos']
+    },
+    'Rodillos Inteligentes': {
+      Tipo:['Directo','Wheel-on'],
+      Apps:['Zwift','Rouvy','TrainerRoad'],
+      Precio:['<300€','300–500€','500–800€','800–1200€','+1200€'],
+      Potencia:['1000W+','1500W+','2000W+'],
+      Simulación:['12%+','16%+','20%+']
+    },
+    'Potenciómetros': {
+      Tipo:['Biela','Pedal','Spider','Buje'],
+      Compatibilidad:['Shimano','SRAM','Rotor','Campagnolo'],
+      Precio:['<300€','300–500€','500–800€','800–1200€','+1200€'],
+      Medición:['1 lado','2 lados'],
+      'Longitud biela':['165','170','172.5','175'],
+      Precisión:['±1%','±2%','±3%']
+    },
+    'Ruedas': {
+      Tamaño:['700C','29"','27.5"'],
+      Freno:['Disco','Zapata'],
+      Precio:['<200€','200–400€','400–700€','700–1200€','+1200€'],
+      Material:['Aluminio','Carbono'],
+      Tubeless:['Sí','No']
+    },
+    'Luces Potentes': {
+      Lúmenes:['300+','600+','1000+'],
+      Autonomía:['<2h','2–4h','4h+'],
+      Precio:['<30€','30–60€','60–100€','100–150€','+150€'],
+      Montaje:['Manillar','Casco']
+    },
+    'Chaquetas': {
+      Disciplina:['Carretera','MTB','Gravel','Urbano'],
+      Talla:['XS','S','M','L','XL','XXL'],
+      Precio:['<60€','60–100€','100–150€','150–200€','200–300€','+300€'],
+      Estación:['Invierno','Entretiempo','Lluvia'],
+      Membrana:['>5.000 mm','>10.000 mm','>20.000 mm']
+    },
+    'Nutrición': {
+      Tipo:['Gel','Barrita','Isotónica','Recuperador'],
+      CarboHora:['30–60g','60–90g'],
+      Precio:['<10€','10–20€','20–40€','40–80€','+80€'],
+      Cafeína:['Sí','No']
+    }
+  };
 
-  const GLOBAL_MIN_FILTERS = { Precio:['<50€','50–100€','100–200€','200–300€','+300€'] };
+  const EXTRA_CATEGORIES = [
+    'Gafas','Guantes','Camisetas interiores','Chubasqueros','Calcetines térmicos',
+    'Multiherramientas','Bombas / CO₂','Kits tubeless','Cadenas','Pastillas de freno',
+    'Lubricantes','Ceras','Limpiadores','Portabidones','Bidones',
+    'Soportes móvil/GPS','Luces traseras','Cintas de manillar','Puños',
+    'Sensores HR/Vel/Cad','Sillines','Cinta tubular'
+  ];
 
-  // ---------- Principal ----------
-  async function sendMessage(messageText=null){
-    const message = messageText!==null ? messageText : userInput.value.trim();
-    if(message==='') return;
+  const GLOBAL_MIN_FILTERS = { Precio:['<50€','50–100€','100–200€','200–300€','+300€'] };
 
-    setLoading(true);
-    removeExistingChips();
-    appendMessage('user', message);
-    chatHistory.push({role:'user', content:message});
-    if(messageText===null) userInput.value='';
+  const log = (...args)=>console.info(...args); // trazas mínimas
 
-    showLoadingSkeletons();
-    detectActiveCategoryFromMessage(message);
-    lastQueryMessage = message;
+  // ======= Render helpers =======
+  function appendMessage(sender, html){
+    const el=document.createElement('div');
+    el.classList.add('message',sender);
+    el.innerHTML=html;
+    chatContainer.appendChild(el);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+  function clearTransientUI(){
+    document.getElementById('chips-container')?.remove();
+    document.getElementById('results-actions')?.remove();
+    document.getElementById('loading-skeletons')?.remove();
+  }
+  function showSkeletons(){
+    const c=document.createElement('div'); c.className='ge-skeletons'; c.id='loading-skeletons';
+    for(let i=0;i<6;i++){ const sk=document.createElement('div'); sk.className='ge-skel'; c.appendChild(sk); }
+    chatContainer.appendChild(c);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+  function setLoading(b){ sendButton.disabled=b; userInput.disabled=b; }
 
-    try{
-      const response = await fetch(CONFIG.CLOUD_FUNCTION_URL,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chatHistory})
-      });
-      if(!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      const data = await response.json();
+  // ======= Landing =======
+  function renderLanding(){
+    currentState = STATE.LANDING;
+    clearTransientUI();
+    appendMessage('bot', "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en varios eBay por ti.<br><br><strong>¿Qué necesitas hoy?</strong>");
+    const container=document.createElement('div'); container.className='chips-container'; container.id='chips-container';
+    const row=document.createElement('div'); row.className='chips-row';
+    CONFIG.intents.forEach(label=>{
+      const chip=document.createElement('div'); chip.className='chip'+(label==='+'?' plus':''); chip.innerText=label;
+      chip.onclick = label==='+' ? openMoreCategories : ()=>selectCategory(label);
+      row.appendChild(chip);
+    });
+    container.appendChild(row);
+    chatContainer.appendChild(container);
+  }
 
-      removeLoadingSkeletons();
+  function openMoreCategories(){
+    modalContent.innerHTML='';
+    EXTRA_CATEGORIES.forEach(cat=>{
+      const chip=document.createElement('div'); chip.className='chip'; chip.innerText=cat;
+      chip.onclick=()=>{ closeModal(); selectCategory(cat); };
+      modalContent.appendChild(chip);
+    });
+    const other=document.createElement('div'); other.className='chip'; other.innerText='Otro producto…';
+    other.onclick=()=>{
+      const val=prompt('¿Qué producto quieres buscar?');
+      if(val && val.trim()!==''){ activeCategory = val.trim(); renderFilters(true); }
+      closeModal();
+    };
+    modalContent.appendChild(other);
+    modalBackdrop.style.display='flex';
+  }
+  function closeModal(){ modalBackdrop.style.display='none'; }
+  modalCloseBtn.onclick=closeModal;
+  modalBackdrop.onclick=(e)=>{ if(e.target===modalBackdrop) closeModal(); };
 
-      if(data.success){
-        const text = (data.responseText||'').trim();
-        chatHistory.push({role:'assistant', content:text});
-        appendMessage('bot', text);
+  // ======= Filters =======
+  function selectCategory(label){
+    activeCategory = label;
+    shownProductUrls.clear();
+    activeFilters = {};
+    moreFiltersExpanded = {};
+    renderFilters();
+  }
 
-        if(data.products && data.products.length>0){
-          renderProductCards(data.products);
-          renderResultsActions();
-        }else{
-          appendMessage('bot', 'No he encontrado resultados para esa búsqueda. ¿Quieres probar a ajustar los filtros o buscar otra cosa?');
-        }
-      }else{
-        appendMessage('bot','Error del servidor: '+data.responseText);
-      }
-    }catch(e){
-      console.error('Error de Fetch:',e);
-      removeLoadingSkeletons();
-      appendMessage('bot','Disculpa, ha ocurrido un error de conexión.');
-    }finally{
-      setLoading(false);
-    }
-  }
+  function getFacetGroupsWithPriceFirst(facets){
+    const entries = Object.entries(facets);
+    const priceIdx = entries.findIndex(([k])=>/precio/i.test(k));
+    if(priceIdx>0){ const [pair]=entries.splice(priceIdx,1); entries.splice(2,0,pair); } // intenta TOP3
+    return entries;
+  }
 
-  // ---------- UI ----------
-  function appendMessage(sender, message){
-    const el=document.createElement('div');
-    el.classList.add('message',sender);
-    el.innerHTML=message;
-    chatContainer.appendChild(el);
-    scrollToBottom();
-  }
+  function renderFilters(fallbackIfUnknown=false){
+    clearTransientUI();
+    const hasFacets = FACETS_BY_CATEGORY[activeCategory];
+    if(!hasFacets && !fallbackIfUnknown){
+      // categoría externa desconocida -> fallback mínimo
+      currentState = STATE.FALLBACK;
+    }else{
+      currentState = STATE.FILTERS;
+    }
 
-  function renderProductCards(products){
-    const container=document.createElement('div');
-    container.className='cards-container';
+    const container=document.createElement('div'); container.className='chips-container'; container.id='chips-container';
+    const hint=document.createElement('div'); hint.className='chips-hint'; hint.textContent='Ajusta los filtros y te busco las mejores opciones 👇';
+    container.appendChild(hint);
 
-    products.forEach(p=>{
-      if(p.url && shownProductUrls.has(p.url)) return;
-      shownProductUrls.add(p.url);
+    if(currentState===STATE.FALLBACK){
+      Object.entries(GLOBAL_MIN_FILTERS).forEach(([group,chips])=>container.appendChild(createFacetRow(group, chips)));
+    }else{
+      const facets = FACETS_BY_CATEGORY[activeCategory];
+      const groups = getFacetGroupsWithPriceFirst(facets);
+      const FIRST = 4;
+      const first = groups.slice(0,FIRST);
+      const rest  = groups.slice(FIRST);
 
-      const a=document.createElement('a');
-      a.className='product-card';
-      a.href=p.url||'#';
-      a.target='_blank';
-      a.rel='nofollow sponsored noopener';
+      first.forEach(([group,chips])=>container.appendChild(createFacetRow(group, chips)));
 
-      const img=document.createElement('img');
-      img.className='product-image';
-      img.src=p.imagen||'';
-      img.alt=p.nombre||'Producto';
+      if(rest.length){
+        const moreBtn=document.createElement('button'); moreBtn.className='apply-filters-btn'; moreBtn.innerText='Más filtros';
+        moreBtn.onclick=()=>{ rest.forEach(([g,ch])=>container.appendChild(createFacetRow(g,ch))); moreBtn.remove(); moreFiltersExpanded[activeCategory]=true; chatContainer.scrollTop=chatContainer.scrollHeight; };
+        if(moreFiltersExpanded[activeCategory]) rest.forEach(([g,ch])=>container.appendChild(createFacetRow(g,ch))); else container.appendChild(moreBtn);
+      }
+    }
 
-      const details=document.createElement('div');
-      details.className='product-details';
+    // Barra acciones
+    const actions=document.createElement('div'); actions.className='chips-row'; actions.style.justifyContent='space-between'; actions.style.alignItems='center';
+    const clearBtn=document.createElement('button'); clearBtn.className='clear-filters-btn'; clearBtn.innerText='Limpiar filtros';
+    clearBtn.onclick=()=>{ activeFilters={}; container.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected')); renderOrRemoveApplyBtn(container); };
 
-      const title=document.createElement('div');
-      title.className='product-title';
-      title.textContent=p.nombre||'';
+    const holder=document.createElement('div'); holder.id='apply-holder';
+    actions.appendChild(clearBtn); actions.appendChild(holder); container.appendChild(actions);
 
-      const bottom=document.createElement('div');
-      bottom.className='product-info-bottom';
+    chatContainer.appendChild(container);
+    renderOrRemoveApplyBtn(container);
+    log('STATE ->', currentState);
+  }
 
-      const price=document.createElement('div');
-      price.className='product-price';
-      price.textContent=p.precio||'';
+  function createFacetRow(label, chipsArr){
+    const row=document.createElement('div'); row.className='chips-row';
+    const labelEl=document.createElement('span'); labelEl.className='chips-group-label'; labelEl.innerText=label;
+    row.appendChild(labelEl);
+    chipsArr.forEach(lbl=>{
+      const chip=document.createElement('div'); chip.className='chip'; chip.innerText=lbl;
+      chip.onclick=()=>toggleFilter(chip,{group:label, value:lbl});
+      row.appendChild(chip);
+    });
+    return row;
+  }
+  function toggleFilter(chipEl, chipData){
+    chipEl.classList.toggle('selected');
+    if(chipEl.classList.contains('selected')) activeFilters[chipData.group]=chipData.value;
+    else delete activeFilters[chipData.group];
+    renderOrRemoveApplyBtn(document.getElementById('chips-container'));
+  }
+  function renderOrRemoveApplyBtn(container){
+    const holder=container.querySelector('#apply-holder');
+    holder.innerHTML='';
+    const count=Object.keys(activeFilters).length;
+    if(count>0){
+      const btn=document.createElement('button'); btn.className='apply-filters-btn'; btn.id='apply-filters-btn';
+      btn.innerText=`✨ Aplicar filtros y buscar (${count})`;
+      btn.onclick=applyFilters;
+      holder.appendChild(btn);
+    }
+  }
 
-      const store=document.createElement('div');
-      store.className='product-store';
-      store.textContent=p.tienda ? `eBay ${p.tienda}` : 'eBay';
+  // ======= Query builder (plantilla fija) =======
+  function buildNaturalQuery(){
+    const cat = activeCategory ? activeCategory.toLowerCase() : 'producto';
+    const parts = [`Busco ${cat}`];
 
-      bottom.appendChild(price);
-      bottom.appendChild(store);
-      details.appendChild(title);
-      details.appendChild(bottom);
+    for(const [k,v] of Object.entries(activeFilters)){
+      const key=k.toLowerCase();
+      if(key.includes('disciplina')) parts.push(`para ${v.toLowerCase()}`);
+      else if(key.includes('talla') && !key.includes('eu')) parts.push(`en talla ${v}`);
+      else if(key.includes('talla eu')) parts.push(`talla EU ${v}`);
+      else if(key.includes('precio')){
+        if(v.startsWith('<')) parts.push(`con presupuesto por menos de ${v.replace('<','')}`);
+        else if(v.startsWith('+')) parts.push(`con presupuesto por más de ${v.replace('+','')}`);
+        else if(/–|-/.test(v)){ const [a,b]=v.replace('€','').split(/–|-/); parts.push(`con presupuesto entre ${a.trim()} y ${b.trim()} €`); }
+        else parts.push(`con presupuesto ${v}`);
+      }
+      else if(key==='seguridad') parts.push(`con ${v}`);
+      else if(key==='peso') parts.push(`peso ${v}`);
+      else if(key==='cala') parts.push(`para calas ${v}`);
+      else if(key==='rigidez') parts.push(`rigidez ${v.toLowerCase()}`);
+      else if(key==='ventilación' || key==='ventilacion') parts.push(`ventilación ${v.toLowerCase()}`);
+      else if(key==='navegación' || key==='navegacion') parts.push(v==='Mapas'?'con mapas':'para seguimiento básico');
+      else if(key==='conectividad') parts.push(`conectividad ${v}`);
+      else if(key==='métricas' || key==='metricas') parts.push(`métricas ${v.toLowerCase()}`);
+      else if(key==='tipo') parts.push(`de tipo ${v.toLowerCase()}`);
+      else if(key==='apps') parts.push(`compatible con ${v}`);
+      else if(key==='potencia' || key==='simulación' || key==='simulacion') parts.push(`${key} ${v}`);
+      else if(key==='compatibilidad') parts.push(`compatibles con ${v}`);
+      else if(key==='medición' || key==='medicion') parts.push(`medición ${v}`);
+      else if(key==='longitud biela') parts.push(`biela ${v} mm`);
+      else if(key==='precisión' || key==='precision') parts.push(`precisión ${v}`);
+      else if(key==='tamaño' || key==='tamano') parts.push(`${v}`);
+      else if(key==='freno') parts.push(`freno de ${v.toLowerCase()}`);
+      else if(key==='material') parts.push(v.toLowerCase());
+      else if(key==='tubeless') parts.push(`tubeless ${v.toLowerCase()}`);
+      else if(key==='lúmenes' || key==='lumenes') parts.push(`${v} lúmenes`);
+      else if(key==='autonomía' || key==='autonomia') parts.push(`autonomía ${v}`);
+      else if(key==='montaje') parts.push(`montaje en ${v.toLowerCase()}`);
+      else if(key==='estación' || key==='estacion') parts.push(`de ${v.toLowerCase()}`);
+      else if(key==='membrana') parts.push(`membrana ${v}`);
+      else if(key==='carbohora') parts.push(`${v} de carbo/h`);
+      else if(key==='cafeína' || key==='cafeina') parts.push(`con cafeína`);
+      else if(key==='badana') parts.push(`badana ${v}`);
+    }
 
-      a.appendChild(img);
-      a.appendChild(details);
-      container.appendChild(a);
-    });
+    parts.push('Devuélveme hasta 12 tarjetas con título, imagen, precio y link afiliado. Si no hay stock, sugiere ampliar precio o quitar filtros.');
+    parts.push('Muéstrame opciones.');
+    return parts.join(', ').replace(', Muéstrame opciones.','. Muéstrame opciones.');
+  }
 
-    chatContainer.appendChild(container);
-    scrollToBottom();
-  }
+  // ======= Buscar (solo desde FILTERS/RESULTS) =======
+  async function applyFilters(){
+    if(!(currentState===STATE.FILTERS || currentState===STATE.FALLBACK)) return;
+    const query = buildNaturalQuery();
+    lastQueryText = query;
+    await runSearch(query, /*appendResults*/ false);
+  }
 
-  function renderResultsActions(){
-    document.getElementById('results-actions')?.remove();
+  async function moreResults(){
+    if(currentState!==STATE.RESULTS) return;
+    const query = `${lastQueryText}\nMuéstrame más opciones similares.`;
+    await runSearch(query, /*appendResults*/ true);
+  }
 
-    const row=document.createElement('div');
-    row.className='results-actions';
-    row.id='results-actions';
+  async function runSearch(query, append){
+    // Transición a SEARCHING
+    currentState = STATE.SEARCHING;
+    setLoading(true);
+    clearTransientUI();
+    appendMessage('user', query);
+    chatHistory.push({role:'user', content: query});
+    showSkeletons();
+    log('STATE ->', currentState, 'QUERY ->', query);
 
-    const moreBtn=document.createElement('button');
-    moreBtn.className='btn';
-    moreBtn.innerText='Más resultados';
-    moreBtn.onclick=async ()=>{
-      moreBtn.disabled=true;
-      await sendMessage(`${lastQueryMessage}\nMuéstrame más opciones similares.`);
-      moreBtn.disabled=false;
-    };
+    try{
+      const res = await fetch(CONFIG.CLOUD_FUNCTION_URL,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ chatHistory })
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
 
-    const priceBtn=document.createElement('button');
-    priceBtn.className='btn secondary';
-    priceBtn.innerText='Ajustar precio';
-    priceBtn.onclick=focusPriceFilter;
+      document.getElementById('loading-skeletons')?.remove();
 
-    const newBtn=document.createElement('button');
-    newBtn.className='btn secondary';
-    newBtn.innerText='Nueva búsqueda';
-    newBtn.onclick=resetToLanding;
+      if(data.success){
+        const text=(data.responseText||'').trim();
+        if(text) appendMessage('bot', text);
 
-    row.appendChild(moreBtn);
-    row.appendChild(priceBtn);
-    row.appendChild(newBtn);
+        const hadAnyBefore = document.querySelector('.cards-container') !== null;
+        const countBefore = shownProductUrls.size;
 
-    chatContainer.appendChild(row);
-    scrollToBottom();
-  }
+        if(data.products && data.products.length){
+          renderProductCards(data.products, append);
+          if(!hadAnyBefore) renderResultsActions();
+        }else{
+          // Sin productos
+          appendMessage('bot', 'No encontré resultados con esos filtros. ¿Ajustamos el precio o probamos otra categoría?');
+          // Vuelve a filtros para permitir ajuste
+          renderFilters(currentState===STATE.FALLBACK);
+        }
 
-  function focusPriceFilter(){
-    if(!document.getElementById('chips-container')){
-      showRefinementChips(true);
-    }
-    const chipsContainer = document.getElementById('chips-container');
-    let priceLabel = Array.from(chipsContainer.querySelectorAll('.chips-group-label'))
-      .find(el=>/precio/i.test(el.textContent||''));
+        log('RESULTS ->', shownProductUrls.size - countBefore, 'nuevos');
+        // Estado final
+        currentState = data.products && data.products.length ? STATE.RESULTS : (FACETS_BY_CATEGORY[activeCategory]?STATE.FILTERS:STATE.FALLBACK);
+      }else{
+        appendMessage('bot', 'Error del servidor: '+data.responseText);
+        currentState = FACETS_BY_CATEGORY[activeCategory]?STATE.FILTERS:STATE.FALLBACK;
+      }
+    }catch(e){
+      console.error(e);
+      document.getElementById('loading-skeletons')?.remove();
+      appendMessage('bot','Disculpa, ha ocurrido un error de conexión.');
+      currentState = FACETS_BY_CATEGORY[activeCategory]?STATE.FILTERS:STATE.FALLBACK;
+    }finally{
+      setLoading(false);
+      log('STATE ->', currentState);
+    }
+  }
 
-    if(!priceLabel){
-      const moreBtn = Array.from(chipsContainer.querySelectorAll('button'))
-        .find(b=>b.textContent && b.textContent.toLowerCase().includes('más filtros'));
-      if(moreBtn){ moreBtn.click(); }
-      priceLabel = Array.from(chipsContainer.querySelectorAll('.chips-group-label'))
-        .find(el=>/precio/i.test(el.textContent||''));
-    }
+  // ======= Pintar resultados + acciones =======
+  function renderProductCards(products, append){
+    if(!append) shownProductUrls.clear();
+    let container = append ? chatContainer.querySelector('.cards-container') : null;
+    if(!append || !container){
+      container=document.createElement('div'); container.className='cards-container';
+      chatContainer.appendChild(container);
+    }
 
-    if(priceLabel){
-      const groupRow = priceLabel.parentElement;
-      groupRow.classList.add('price-highlight');
-      groupRow.scrollIntoView({behavior:'smooth', block:'center'});
-      setTimeout(()=>groupRow.classList.remove('price-highlight'),1600);
-    }
-  }
+    products.forEach(p=>{
+      if(!p.url || shownProductUrls.has(p.url)) return;
+      shownProductUrls.add(p.url);
 
-  function resetToLanding(){
-    activeCategory=null;
-    activeFilters={};
-    modeFallback=false;
-    moreFiltersExpanded={};
-    shownProductUrls.clear();
-    chatContainer.innerHTML = '';
-    const welcome = "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en las mejores tiendas online por ti. Para mantener este servicio gratuito, utilizo enlaces de afiliado.<br><br><strong>¿Qué necesitas hoy?</strong>";
-    appendMessage('bot', welcome);
-    showInitialIntentChips();
-    scrollToBottom();
-  }
+      const a=document.createElement('a'); a.className='product-card'; a.href=p.url; a.target='_blank'; a.rel='nofollow sponsored noopener';
+      const img=document.createElement('img'); img.className='product-image'; img.src=p.imagen||''; img.alt=p.nombre||'Producto';
 
-  function showInitialIntentChips(){
-    const chips = CONFIG.intents.map(label=>({label,value:label}));
-    const chipsElement = createCategoryChipsRow(chips);
+      const details=document.createElement('div'); details.className='product-details';
+      const title=document.createElement('div'); title.className='product-title'; title.textContent=p.nombre||'';
+      const bottom=document.createElement('div'); bottom.className='product-info-bottom';
+      const price=document.createElement('div'); price.className='product-price'; price.textContent=p.precio||'';
+      const store=document.createElement('div'); store.className='product-store'; store.textContent=p.tienda ? `eBay ${p.tienda}` : 'eBay';
 
-    const container=document.createElement('div');
-    container.className='chips-container';
-    container.id='chips-container';
-    container.appendChild(chipsElement);
+      bottom.appendChild(price); bottom.appendChild(store);
+      details.appendChild(title); details.appendChild(bottom);
+      a.appendChild(img); a.appendChild(details);
+      container.appendChild(a);
+    });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 
-    chatContainer.appendChild(container);
-    scrollToBottom();
-  }
+  function renderResultsActions(){
+    document.getElementById('results-actions')?.remove();
+    const row=document.createElement('div'); row.className='results-actions'; row.id='results-actions';
 
-  function createCategoryChipsRow(chips){
-    const row=document.createElement('div');
-    row.className='chips-row';
-    chips.forEach(ch=>{
-      const chip=document.createElement('div');
-      chip.className='chip'+(ch.label==='+'?' plus':'');
-      chip.innerText=ch.label;
+    const moreBtn=document.createElement('button'); moreBtn.className='btn'; moreBtn.innerText='Más resultados';
+    moreBtn.onclick=async ()=>{ moreBtn.disabled=true; await moreResults(); moreBtn.disabled=false; };
 
-      chip.onclick = () => {
-        if(ch.label === '+'){
-          openMoreCategories();
-        } else {
-          handleCategorySelection(ch.label);
-        }
-      };
-      row.appendChild(chip);
-    });
-    return row;
-  }
-  
-  function handleCategorySelection(categoryName) {
-    activeCategory = categoryName;
-    modeFallback = !FACETS_BY_CATEGORY[activeCategory];
-    activeFilters = {};
-    shownProductUrls.clear();
-    removeExistingChips();
-    showRefinementChips(true);
-  }
+    const priceBtn=document.createElement('button'); priceBtn.className='btn secondary'; priceBtn.innerText='Ajustar precio';
+    priceBtn.onclick=focusPriceFilter;
 
-  function openMoreCategories(){
-    modalContent.innerHTML='';
-    EXTRA_CATEGORIES.forEach(cat=>{
-      const chip=document.createElement('div'); chip.className='chip'; chip.innerText=cat;
-      chip.onclick=()=>{
-        closeModal();
-        handleCategorySelection(cat);
-      };
-      modalContent.appendChild(chip);
-    });
+    const newBtn=document.createElement('button'); newBtn.className='btn secondary'; newBtn.innerText='Nueva búsqueda';
+    newBtn.onclick=resetToLanding;
 
-    const other=document.createElement('div'); other.className='chip'; other.innerText='Otro producto…';
-    other.onclick=()=>{
-      const val=prompt('¿Qué producto quieres buscar? Escribe tu consulta:');
-      if(val && val.trim()!==''){
-        closeModal();
-        handleCategorySelection(val.trim());
-      }
-    };
-    modalContent.appendChild(other);
+    row.appendChild(moreBtn); row.appendChild(priceBtn); row.appendChild(newBtn);
+    chatContainer.appendChild(row);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 
-    modalBackdrop.style.display='flex';
-  }
-  function closeModal(){ modalBackdrop.style.display='none'; }
-  modalCloseBtn.onclick=closeModal;
-  modalBackdrop.onclick=(e)=>{ if(e.target===modalBackdrop) closeModal(); };
+  function focusPriceFilter(){
+    // Garantiza que los filtros estén visibles
+    if(currentState!==STATE.FILTERS && currentState!==STATE.FALLBACK){
+      renderFilters(currentState===STATE.FALLBACK);
+    }
+    const chipsContainer = document.getElementById('chips-container');
+    let priceLabel = Array.from(chipsContainer.querySelectorAll('.chips-group-label')).find(el=>/precio/i.test(el.textContent||''));
 
-  function getFacetGroupsWithPriceFirst(facets){
-    const entries = Object.entries(facets);
-    const idx = entries.findIndex(([k])=>/precio/i.test(k));
-    if(idx>0){ const [pair]=entries.splice(idx,1); entries.splice(2,0,pair); }
-    return entries;
-  }
+    if(!priceLabel){
+      const moreBtn = Array.from(chipsContainer.querySelectorAll('button')).find(b=>b.textContent?.toLowerCase().includes('más filtros'));
+      if(moreBtn){ moreBtn.click(); }
+      priceLabel = Array.from(chipsContainer.querySelectorAll('.chips-group-label')).find(el=>/precio/i.test(el.textContent||''));
+    }
+    if(priceLabel){
+      const row = priceLabel.parentElement;
+      row.classList.add('price-highlight');
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(()=>row.classList.remove('price-highlight'),1500);
+    }
+  }
 
-  function showRefinementChips(showHint=false){
-    const container=document.createElement('div');
-    container.className='chips-container'; container.id='chips-container';
+  function resetToLanding(){
+    activeCategory=null;
+    activeFilters={};
+    moreFiltersExpanded={};
+    shownProductUrls.clear();
+    clearTransientUI();
 
-    if(showHint){
-      const hint=document.createElement('div'); hint.className='chips-hint';
-      hint.textContent='Selecciona tus preferencias o busca directamente 👇';
-      container.appendChild(hint);
-    }
+    // Limpia timeline excepto cabecera y deja solo el nuevo landing
+    while(chatContainer.firstChild) chatContainer.removeChild(chatContainer.firstChild);
+    renderLanding();
+  }
 
-    const facets = FACETS_BY_CATEGORY[activeCategory];
-    if(activeCategory && facets){
-      const groups = getFacetGroupsWithPriceFirst(facets);
-      const FIRST = 4;
-      const first = groups.slice(0,FIRST);
-      const rest  = groups.slice(FIRST);
+  // ======= Entrada clásica (mensaje manual) =======
+  async function sendFreeText(){
+    const msg = userInput.value.trim();
+    if(!msg) return;
+    appendMessage('user', msg);
+    chatHistory.push({role:'user', content:msg});
+    userInput.value='';
 
-      first.forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
+    // Si el usuario escribe “busco X” manual, lo tratamos como categoría y vamos a filtros
+    if(/^busco\s+/i.test(msg)){
+      const lower = msg.toLowerCase();
+      const known = Object.keys(FACETS_BY_CATEGORY).find(k=>lower.includes(k.toLowerCase()));
+      activeCategory = known || msg.replace(/^busco\s+/i,'').trim();
+      renderFilters(!known);
+      return;
+    }
 
-      if(rest.length){
-        const moreBtn=document.createElement('button');
-        moreBtn.className='apply-filters-btn'; moreBtn.innerText='Más filtros';
-        moreBtn.onclick=()=>{
-          rest.forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
-          moreBtn.remove(); moreFiltersExpanded[activeCategory]=true; scrollToBottom();
-        };
-        if(moreFiltersExpanded[activeCategory]) {
-          rest.forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
-        } else container.appendChild(moreBtn);
-      }
-    }else{
-      modeFallback=true;
-      Object.entries(GLOBAL_MIN_FILTERS).forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
-    }
+    // Si estamos en resultados y escribe algo como “más resultados”, lo encaminamos:
+    if(currentState===STATE.RESULTS && /más resultados|mas resultados/i.test(msg)){ await moreResults(); return; }
 
-    const actionsRow=document.createElement('div'); actionsRow.className='chips-row';
-    actionsRow.style.justifyContent='space-between'; actionsRow.style.alignItems='center';
-    actionsRow.style.gap='0.5rem';
+    // Si no encaja, mantenemos conversación mínima sin romper flujo:
+    appendMessage('bot','Dime qué categoría quieres (o pulsa una) y ajustamos filtros para buscarte chollos.');
+  }
 
-    const clearBtn=document.createElement('button'); clearBtn.className='clear-filters-btn'; clearBtn.innerText='Limpiar';
-    clearBtn.onclick=()=>{
-      activeFilters={};
-      container.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
-      updateApplyButton();
-    };
+  // ======= Init =======
+  sendButton.addEventListener('click', sendFreeText);
+  userInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter' && !e.shiftKey) sendFreeText(); });
 
-    const applyBtn=document.createElement('button');
-    applyBtn.id='apply-filters-btn'; applyBtn.className='apply-filters-btn';
-    
-    actionsRow.appendChild(clearBtn);
-    actionsRow.appendChild(applyBtn);
-    container.appendChild(actionsRow);
-
-    chatContainer.appendChild(container);
-    updateApplyButton();
-    scrollToBottom();
-  }
-
-  function createFacetRow(label,chipsArr){
-    const row=document.createElement('div'); row.className='chips-row';
-    const labelEl=document.createElement('span'); labelEl.className='chips-group-label'; labelEl.innerText=label;
-    row.appendChild(labelEl);
-    chipsArr.forEach(lbl=>{
-      const chip=document.createElement('div'); chip.className='chip'; chip.innerText=lbl;
-      chip.onclick=()=>handleRefinementClick(chip,{group:label,value:lbl});
-      row.appendChild(chip);
-    });
-    return row;
-  }
-
-  function handleRefinementClick(chipEl, chipData){
-    chipEl.classList.toggle('selected');
-    if(chipEl.classList.contains('selected')) activeFilters[chipData.group]=chipData.value;
-    else delete activeFilters[chipData.group];
-    updateApplyButton();
-  }
-
-  function updateApplyButton(){
-    const btn = document.getElementById('apply-filters-btn');
-    if (!btn) return;
-    
-    const count = Object.keys(activeFilters).length;
-    if (count > 0) {
-      btn.innerText = `✨ Aplicar y Buscar (${count})`;
-      btn.onclick = applyFilters;
-    } else {
-      btn.innerText = '🔍 Buscar sin filtros';
-      btn.onclick = applyFilters; // Llama a la misma función, que ya sabe construir la query
-    }
-  }
-
-  function applyFilters(){
-    const base = `Busco ${activeCategory}`;
-    const parts=[];
-    for(const [k,v] of Object.entries(activeFilters)){
-      const key=k.toLowerCase();
-      if(key.includes('talla') && !key.includes('eu')) parts.push(`en talla ${v}`);
-      else if(key.includes('talla eu')) parts.push(`talla EU ${v}`);
-      else if(key.includes('precio')){
-        if(v.startsWith('<')) parts.push(`por menos de ${v.replace('<','')}`);
-        else if(v.startsWith('+')) parts.push(`por más de ${v.replace('+','')}`);
-        else if(/–|-/.test(v)){ const [a,b]=v.replace('€','').split(/–|-/); parts.push(`con presupuesto entre ${a.trim()} y ${b.trim()} €`); }
-        else parts.push(`con presupuesto ${v}`);
-      }
-      else if(key.includes('disciplina')) parts.push(`para ${v.toLowerCase()}`);
-      else if(key==='seguridad') parts.push(`con ${v}`);
-      else if(key==='peso') parts.push(`peso ${v}`);
-      else if(key==='cala') parts.push(`para calas ${v}`);
-      else if(key==='rigidez') parts.push(`rigidez ${v.toLowerCase()}`);
-      else if(key==='ventilación' || key==='ventilacion') parts.push(`ventilación ${v.toLowerCase()}`);
-      else if(key==='navegación' || key==='navegacion') parts.push(v==='Mapas'?'con mapas':'para seguimiento básico');
-      else if(key==='conectividad') parts.push(`conectividad ${v}`);
-      else if(key==='métricas' || key==='metricas') parts.push(`métricas ${v.toLowerCase()}`);
-      else if(key==='tipo') parts.push(`de tipo ${v.toLowerCase()}`);
-      else if(key==='apps') parts.push(`compatible con ${v}`);
-      else if(key==='potencia' || key==='simulación' || key==='simulacion') parts.push(`${key} ${v}`);
-      else if(key==='compatibilidad') parts.push(`compatibles con ${v}`);
-      else if(key==='medición' || key==='medicion') parts.push(`medición ${v}`);
-      else if(key==='longitud biela') parts.push(`biela ${v} mm`);
-      else if(key==='precisión' || key==='precision') parts.push(`precisión ${v}`);
-      else if(key==='tamaño' || key==='tamano') parts.push(`${v}`);
-      else if(key==='freno') parts.push(`freno de ${v.toLowerCase()}`);
-      else if(key==='material') parts.push(v.toLowerCase());
-      else if(key==='tubeless') parts.push(`tubeless ${v.toLowerCase()}`);
-      else if(key==='lúmenes' || key==='lumenes') parts.push(`${v} lúmenes`);
-      else if(key==='autonomía' || key==='autonomia') parts.push(`autonomía ${v}`);
-      else if(key==='montaje') parts.push(`montaje en ${v.toLowerCase()}`);
-      else if(key==='estación' || key==='estacion') parts.push(`de ${v.toLowerCase()}`);
-      else if(key==='membrana') parts.push(`membrana ${v}`);
-      else if(key==='carbohora') parts.push(`${v} de carbo/h`);
-      else if(key==='cafeína' || key==='cafeina') parts.push(`con cafeína`);
-      else if(key==='badana') parts.push(`badana ${v}`);
-      else parts.push(`${k} ${v}`);
-    }
-    const msg = parts.length ? `${base} ${parts.join(', ')}.` : base;
-    sendMessage(msg);
-  }
-  
-  function detectActiveCategoryFromMessage(message){
-    const m=message.trim().toLowerCase();
-    if(m.startsWith('busco')){
-      const cat = Object.keys(FACETS_BY_CATEGORY).find(k=>m.includes(k.toLowerCase()));
-      activeCategory = cat || activeCategory;
-      modeFallback = !FACETS_BY_CATEGORY[activeCategory];
-      if(!cat && m.startsWith('busco ')){ activeCategory = m.replace(/^busco\s+/,'').trim(); modeFallback = true; }
-    }
-  }
-
-  // Helpers
-  function showLoadingSkeletons(){
-    const container=document.createElement('div'); container.className='ge-skeletons'; container.id='loading-skeletons';
-    for(let i=0;i<6;i++){ const sk=document.createElement('div'); sk.className='ge-skel'; container.appendChild(sk); }
-    chatContainer.appendChild(container); scrollToBottom();
-  }
-  function removeLoadingSkeletons(){ document.getElementById('loading-skeletons')?.remove(); }
-  function removeExistingChips(){ document.getElementById('chips-container')?.remove(); }
-  function scrollToBottom(){ chatContainer.scrollTop = chatContainer.scrollHeight; }
-  function setLoading(b){ sendButton.disabled=b; userInput.disabled=b; }
-
-  // Init
-  sendButton.addEventListener('click',()=>sendMessage(null));
-  userInput.addEventListener('keypress',(e)=>{ if(e.key==='Enter' && !e.shiftKey) sendMessage(null); });
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    const welcome = "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en las mejores tiendas online por ti. Para mantener este servicio gratuito, utilizo enlaces de afiliado.<br><br><strong>¿Qué necesitas hoy?</strong>";
-    appendMessage('bot', welcome);
-    showInitialIntentChips();
-    userInput.focus();
-  });
+  document.addEventListener('DOMContentLoaded', renderLanding);
 </script>
 
 </body>
