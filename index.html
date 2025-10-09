@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --main-bg:#1a1a2e; --chat-bg:#24243e; --bot-bubble:#3f3f5f; --user-bubble:#4e44b0; --highlight:#ffcc00; --text-primary:#e0e0e0; --text-secondary:#aaa; --border-color:#33334f; }
+  :root{--main-bg:#1a1a2e;--chat-bg:#24243e;--bot-bubble:#3f3f5f;--user-bubble:#4e44b0;--highlight:#ffcc00;--text-primary:#e0e0e0;--text-secondary:#aaa;--border-color:#33334f;}
   html,body{height:100%;margin:0;padding:0;width:100%;font-family:'Poppins',Arial,sans-serif;background-color:var(--main-bg);}
   body{display:flex;justify-content:center;align-items:flex-start;}
   #main-wrapper{width:100%;max-width:700px;min-height:100vh;display:flex;flex-direction:column;background-color:var(--chat-bg);box-shadow:0 4px 12px rgba(0,0,0,.5);}
@@ -17,6 +17,7 @@
   .user{background-color:var(--user-bubble);color:white;align-self:flex-end;border-bottom-right-radius:5px;}
   .bot{background-color:var(--bot-bubble);color:var(--text-primary);align-self:flex-start;border-bottom-left-radius:5px;}
   .bot strong{color:var(--highlight);}
+
   .cards-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;width:100%;padding-top:10px;}
   .product-card{background-color:var(--bot-bubble);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:var(--text-primary);transition:transform .2s,box-shadow .2s;border:1px solid #4a4a6a;}
   .product-card:hover{transform:translateY(-5px);box-shadow:0 6px 15px rgba(0,0,0,.4);}
@@ -26,6 +27,7 @@
   .product-info-bottom{margin-top:auto;}
   .product-price{font-size:16px;font-weight:700;color:var(--highlight);}
   .product-store{font-size:12px;color:var(--text-secondary);}
+
   #input-container{display:flex;padding:10px;border-top:1px solid var(--border-color);background-color:var(--chat-bg);position:sticky;bottom:0;}
   #user-input{flex-grow:1;padding:10px 15px;border:none;border-radius:25px;background-color:#33334f;color:white;font-size:16px;margin-right:10px;outline:none;}
   #send-button{background-color:var(--user-bubble);color:white;border:none;border-radius:50%;width:45px;height:45px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background-color .3s;}
@@ -54,6 +56,13 @@
   .modal-title{color:#fff;font-size:16px;font-weight:600;}
   .modal-close{background:transparent;color:#ddd;border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:8px;cursor:pointer;}
   .modal-content{display:flex;flex-wrap:wrap;gap:.5rem;max-height:60vh;overflow:auto;}
+
+  /* Botonera de resultados */
+  .results-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:10px;}
+  .results-actions .btn{background:#5a4ae3;border:none;color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.25);}
+  .results-actions .btn.secondary{background:transparent;color:#ddd;border:1px solid rgba(255,255,255,.2);}
+  .price-highlight{box-shadow:0 0 0 2px #ffd54f inset;animation:blink 1.2s ease 2;}
+  @keyframes blink{50%{box-shadow:0 0 0 2px transparent inset}}
 </style>
 </head>
 <body>
@@ -92,6 +101,8 @@
   let activeCategory = null;
   let modeFallback = false;
   let moreFiltersExpanded = {};
+  let shownProductUrls = new Set();    // DEDUPE por URL
+  let lastQueryMessage = '';           // para “Más resultados”
 
   const CONFIG = {
     intents: [
@@ -101,7 +112,7 @@
     CLOUD_FUNCTION_URL: 'https://gregario-chatbot-738677149871.europe-west1.run.app'
   };
 
-  // Facetas (asegura que “Precio” esté en el objeto y lo priorizaremos en render)
+  // Facetas (Precio siempre incluido y forzado arriba en render)
   const FACETS_BY_CATEGORY = {
     'Culottes': {
       Disciplina:['Carretera','MTB','Gravel','Indoor'],
@@ -183,11 +194,9 @@
     'Sensores HR/Vel/Cad'
   ];
 
-  const GLOBAL_MIN_FILTERS = {
-    Precio:['<50€','50–100€','100–200€','200–300€','+300€']
-  };
+  const GLOBAL_MIN_FILTERS = { Precio:['<50€','50–100€','100–200€','200–300€','+300€'] };
 
-  // --------- Principal ---------
+  // ---------- Principal ----------
   async function sendMessage(messageText=null){
     const message = messageText!==null ? messageText : userInput.value.trim();
     if(message==='') return;
@@ -199,8 +208,8 @@
     if(messageText===null) userInput.value='';
 
     showLoadingSkeletons();
-
     detectActiveCategoryFromMessage(message);
+    lastQueryMessage = message; // guardar última petición “humana”
 
     try{
       const response = await fetch(CONFIG.CLOUD_FUNCTION_URL,{
@@ -224,6 +233,7 @@
 
         if(data.products && data.products.length>0){
           renderProductCards(data.products);
+          renderResultsActions(); // <-- botones bajo resultados
         }else{
           showRefinementChips(true);
         }
@@ -239,7 +249,6 @@
     }
   }
 
-  // Suprimir solo preguntas aclaratorias muy cortas y sin acción
   function shouldSuppressClarifying(text, products){
     if(products && products.length>0) return false;
     if(!text) return true;
@@ -251,7 +260,7 @@
     return startsQ && shortish && hasKeywords && !actionWords;
   }
 
-  // --------- UI ---------
+  // ---------- UI ----------
   function appendMessage(sender, message){
     const el=document.createElement('div');
     el.classList.add('message',sender);
@@ -263,7 +272,11 @@
   function renderProductCards(products){
     const container=document.createElement('div');
     container.className='cards-container';
+
     products.forEach(p=>{
+      if(p.url && shownProductUrls.has(p.url)) return; // dedupe
+      shownProductUrls.add(p.url);
+
       const a=document.createElement('a');
       a.className='product-card';
       a.href=p.url||'#';
@@ -302,7 +315,87 @@
       a.appendChild(details);
       container.appendChild(a);
     });
+
     chatContainer.appendChild(container);
+    scrollToBottom();
+  }
+
+  // Botonera bajo resultados
+  function renderResultsActions(){
+    // Elimina si ya existe (para no duplicar tras “más resultados”)
+    document.getElementById('results-actions')?.remove();
+
+    const row=document.createElement('div');
+    row.className='results-actions';
+    row.id='results-actions';
+
+    const moreBtn=document.createElement('button');
+    moreBtn.className='btn';
+    moreBtn.innerText='Más resultados';
+    moreBtn.onclick=async ()=>{
+      moreBtn.disabled=true;
+      await sendMessage(`${lastQueryMessage}\nMuéstrame más opciones similares.`);
+      moreBtn.disabled=false;
+    };
+
+    const priceBtn=document.createElement('button');
+    priceBtn.className='btn secondary';
+    priceBtn.innerText='Ajustar precio';
+    priceBtn.onclick=focusPriceFilter;
+
+    const newBtn=document.createElement('button');
+    newBtn.className='btn secondary';
+    newBtn.innerText='Nueva búsqueda';
+    newBtn.onclick=resetToLanding;
+
+    row.appendChild(moreBtn);
+    row.appendChild(priceBtn);
+    row.appendChild(newBtn);
+
+    chatContainer.appendChild(row);
+    scrollToBottom();
+  }
+
+  function focusPriceFilter(){
+    // Si no hay chips, los mostramos de nuevo
+    if(!document.getElementById('chips-container')){
+      showRefinementChips(true);
+    }
+    // Asegurar que el grupo Precio esté renderizado (abre “Más filtros” si fuera necesario)
+    const chipsContainer = document.getElementById('chips-container');
+    let priceLabel = Array.from(chipsContainer.querySelectorAll('.chips-group-label'))
+      .find(el=>/precio/i.test(el.textContent||''));
+
+    if(!priceLabel){
+      const moreBtn = Array.from(chipsContainer.querySelectorAll('button'))
+        .find(b=>b.textContent && b.textContent.toLowerCase().includes('más filtros'));
+      if(moreBtn){ moreBtn.click(); }
+      priceLabel = Array.from(chipsContainer.querySelectorAll('.chips-group-label'))
+        .find(el=>/precio/i.test(el.textContent||''));
+    }
+
+    if(priceLabel){
+      const groupRow = priceLabel.parentElement;
+      groupRow.classList.add('price-highlight');
+      groupRow.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(()=>groupRow.classList.remove('price-highlight'),1600);
+    }
+  }
+
+  function resetToLanding(){
+    activeCategory=null;
+    activeFilters={};
+    modeFallback=false;
+    moreFiltersExpanded={};
+    shownProductUrls.clear();
+    // limpiar UI
+    Array.from(chatContainer.children).forEach(child=>{
+      if(!child.id || (child.id!=='chat-header')) child.remove();
+    });
+    // Mensaje + chips landing
+    const welcome = "<strong>Soy Tu Gregario 🚴‍♂️.</strong> Busco gangas ciclistas en varios eBay por ti.<br><br><strong>¿Qué necesitas hoy?</strong>";
+    appendMessage('bot', welcome);
+    showInitialIntentChips();
     scrollToBottom();
   }
 
@@ -327,16 +420,15 @@
       chip.className='chip'+(ch.label==='+'?' plus':'');
       chip.innerText=ch.label;
 
-      if(ch.label==='+'){
-        chip.onclick=openMoreCategories;
-      }else{
+      if(ch.label==='+'){ chip.onclick=openMoreCategories; }
+      else{
         chip.onclick=()=>{
           activeCategory=ch.label;
           modeFallback=!FACETS_BY_CATEGORY[activeCategory];
           activeFilters={};
+          shownProductUrls.clear();
           removeExistingChips();
           showRefinementChips(true);
-          // mantenemos conversación con backend
           sendMessage(`Busco ${ch.label}`);
         };
       }
@@ -348,34 +440,22 @@
   function openMoreCategories(){
     modalContent.innerHTML='';
     EXTRA_CATEGORIES.forEach(cat=>{
-      const chip=document.createElement('div');
-      chip.className='chip';
-      chip.innerText=cat;
+      const chip=document.createElement('div'); chip.className='chip'; chip.innerText=cat;
       chip.onclick=()=>{
-        activeCategory=cat;
-        modeFallback=!FACETS_BY_CATEGORY[activeCategory];
-        activeFilters={};
-        closeModal();
-        removeExistingChips();
-        showRefinementChips(true);
+        activeCategory=cat; modeFallback=!FACETS_BY_CATEGORY[activeCategory];
+        activeFilters={}; shownProductUrls.clear();
+        closeModal(); removeExistingChips(); showRefinementChips(true);
         sendMessage(`Busco ${cat}`);
       };
       modalContent.appendChild(chip);
     });
 
-    const other=document.createElement('div');
-    other.className='chip';
-    other.innerText='Otro producto…';
+    const other=document.createElement('div'); other.className='chip'; other.innerText='Otro producto…';
     other.onclick=()=>{
       const val=prompt('¿Qué producto quieres buscar? Escribe tu consulta:');
       if(val && val.trim()!==''){
-        activeCategory=null;
-        modeFallback=true;
-        activeFilters={};
-        closeModal();
-        removeExistingChips();
-        showRefinementChips(true);
-        sendMessage(val.trim());
+        activeCategory=null; modeFallback=true; activeFilters={}; shownProductUrls.clear();
+        closeModal(); removeExistingChips(); showRefinementChips(true); sendMessage(val.trim());
       }
     };
     modalContent.appendChild(other);
@@ -386,93 +466,62 @@
   modalCloseBtn.onclick=closeModal;
   modalBackdrop.onclick=(e)=>{ if(e.target===modalBackdrop) closeModal(); };
 
-  // Garantiza Precio en el primer bloque
+  // Precio siempre primero
   function getFacetGroupsWithPriceFirst(facets){
     const entries = Object.entries(facets);
-    const priceIdx = entries.findIndex(([k])=>/precio/i.test(k));
-    if(priceIdx>0){
-      const [pricePair] = entries.splice(priceIdx,1);
-      entries.unshift(pricePair);
-    }
+    const idx = entries.findIndex(([k])=>/precio/i.test(k));
+    if(idx>0){ const [pair]=entries.splice(idx,1); entries.splice(2,0,pair); } // lo subimos a TOP 3 (Disc/Talla/Precio…)
     return entries;
   }
 
   function showRefinementChips(showHint=false){
     activeFilters={};
     const container=document.createElement('div');
-    container.className='chips-container';
-    container.id='chips-container';
+    container.className='chips-container'; container.id='chips-container';
 
     if(showHint){
-      const hint=document.createElement('div');
-      hint.className='chips-hint';
+      const hint=document.createElement('div'); hint.className='chips-hint';
       hint.textContent='Ajusta los filtros y busco por ti 👇';
       container.appendChild(hint);
     }
 
     const facets = FACETS_BY_CATEGORY[activeCategory];
     if(activeCategory && facets){
-      const facetGroups = getFacetGroupsWithPriceFirst(facets);
-      const FIRST_GROUPS_COUNT = 4;
-      const first = facetGroups.slice(0,FIRST_GROUPS_COUNT);
-      const rest  = facetGroups.slice(FIRST_GROUPS_COUNT);
+      const groups = getFacetGroupsWithPriceFirst(facets);
+      const FIRST = 4;
+      const first = groups.slice(0,FIRST);
+      const rest  = groups.slice(FIRST);
 
-      first.forEach(([group,chips])=>{
-        const row=createFacetRow(group,chips);
-        container.appendChild(row);
-      });
+      first.forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
 
       if(rest.length){
         const moreBtn=document.createElement('button');
-        moreBtn.className='apply-filters-btn';
-        moreBtn.innerText='Más filtros';
+        moreBtn.className='apply-filters-btn'; moreBtn.innerText='Más filtros';
         moreBtn.onclick=()=>{
-          rest.forEach(([group,chips])=>{
-            const row=createFacetRow(group,chips);
-            container.appendChild(row);
-          });
-          moreBtn.remove();
-          moreFiltersExpanded[activeCategory]=true;
-          scrollToBottom();
+          rest.forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
+          moreBtn.remove(); moreFiltersExpanded[activeCategory]=true; scrollToBottom();
         };
-        if(moreFiltersExpanded[activeCategory]){
-          rest.forEach(([group,chips])=>{
-            const row=createFacetRow(group,chips);
-            container.appendChild(row);
-          });
-        }else{
-          container.appendChild(moreBtn);
-        }
+        if(moreFiltersExpanded[activeCategory]) {
+          rest.forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
+        } else container.appendChild(moreBtn);
       }
     }else{
       modeFallback=true;
-      Object.entries(GLOBAL_MIN_FILTERS).forEach(([group,chips])=>{
-        const row=createFacetRow(group,chips);
-        container.appendChild(row);
-      });
+      Object.entries(GLOBAL_MIN_FILTERS).forEach(([group,chips])=>container.appendChild(createFacetRow(group,chips)));
     }
 
-    // Barra acciones: limpiar + (botón aplicar condicional renderOrRemove)
-    const actionsRow=document.createElement('div');
-    actionsRow.className='chips-row';
-    actionsRow.style.justifyContent='space-between';
-    actionsRow.style.alignItems='center';
+    const actionsRow=document.createElement('div'); actionsRow.className='chips-row';
+    actionsRow.style.justifyContent='space-between'; actionsRow.style.alignItems='center';
 
-    const clearBtn=document.createElement('button');
-    clearBtn.className='clear-filters-btn';
-    clearBtn.innerText='Limpiar filtros';
+    const clearBtn=document.createElement('button'); clearBtn.className='clear-filters-btn'; clearBtn.innerText='Limpiar filtros';
     clearBtn.onclick=()=>{
       activeFilters={};
       container.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       renderOrRemoveApplyBtn(container);
     };
 
-    const rightHolder=document.createElement('div');
-    rightHolder.id='apply-holder';
-
-    actionsRow.appendChild(clearBtn);
-    actionsRow.appendChild(rightHolder);
-    container.appendChild(actionsRow);
+    const rightHolder=document.createElement('div'); rightHolder.id='apply-holder';
+    actionsRow.appendChild(clearBtn); actionsRow.appendChild(rightHolder); container.appendChild(actionsRow);
 
     chatContainer.appendChild(container);
     renderOrRemoveApplyBtn(container);
@@ -480,18 +529,11 @@
   }
 
   function createFacetRow(label,chipsArr){
-    const row=document.createElement('div');
-    row.className='chips-row';
-
-    const labelEl=document.createElement('span');
-    labelEl.className='chips-group-label';
-    labelEl.innerText=label;
+    const row=document.createElement('div'); row.className='chips-row';
+    const labelEl=document.createElement('span'); labelEl.className='chips-group-label'; labelEl.innerText=label;
     row.appendChild(labelEl);
-
     chipsArr.forEach(lbl=>{
-      const chip=document.createElement('div');
-      chip.className='chip';
-      chip.innerText=lbl;
+      const chip=document.createElement('div'); chip.className='chip'; chip.innerText=lbl;
       chip.onclick=()=>handleRefinementClick(chip,{group:label,value:lbl});
       row.appendChild(chip);
     });
@@ -500,11 +542,9 @@
 
   function handleRefinementClick(chipEl, chipData){
     chipEl.classList.toggle('selected');
-    if(chipEl.classList.contains('selected')){
-      activeFilters[chipData.group]=chipData.value;
-    }else{
-      delete activeFilters[chipData.group];
-    }
+    if(chipEl.classList.contains('selected')) activeFilters[chipData.group]=chipData.value;
+    else delete activeFilters[chipData.group];
+
     const container=document.getElementById('chips-container');
     renderOrRemoveApplyBtn(container);
   }
@@ -514,13 +554,9 @@
     const has=Object.keys(activeFilters).length>0;
     holder.innerHTML='';
     if(has){
-      const btn=document.createElement('button');
-      btn.id='apply-filters-btn';
-      btn.className='apply-filters-btn';
-      const count=Object.keys(activeFilters).length;
-      btn.innerText=`✨ Aplicar Filtros y Buscar (${count})`;
-      btn.onclick=applyFilters;
-      holder.appendChild(btn);
+      const btn=document.createElement('button'); btn.id='apply-filters-btn'; btn.className='apply-filters-btn';
+      const count=Object.keys(activeFilters).length; btn.innerText=`✨ Aplicar Filtros y Buscar (${count})`;
+      btn.onclick=applyFilters; holder.appendChild(btn);
     }
   }
 
@@ -528,89 +564,46 @@
   function applyFilters(){
     const base = getLastUserSearchText() || inferBaseQuery();
     const parts=[];
-
     for(const [k,v] of Object.entries(activeFilters)){
       const key=k.toLowerCase();
-
-      // Talla
       if(key.includes('talla') && !key.includes('eu')) parts.push(`en talla ${v}`);
-      if(key.includes('talla eu')) parts.push(`talla EU ${v}`);
-
-      // Precio
+      else if(key.includes('talla eu')) parts.push(`talla EU ${v}`);
       else if(key.includes('precio')){
         if(v.startsWith('<')) parts.push(`por menos de ${v.replace('<','')}`);
         else if(v.startsWith('+')) parts.push(`por más de ${v.replace('+','')}`);
-        else if(/–|-/.test(v)){
-          const [a,b]=v.replace('€','').split(/–|-/);
-          parts.push(`con presupuesto entre ${a.trim()} y ${b.trim()} €`);
-          continue;
-        }else{
-          parts.push(`con presupuesto ${v}`);
-        }
+        else if(/–|-/.test(v)){ const [a,b]=v.replace('€','').split(/–|-/); parts.push(`con presupuesto entre ${a.trim()} y ${b.trim()} €`); }
+        else parts.push(`con presupuesto ${v}`);
       }
-
-      // Disciplina / tipo / otros
-      else if(key.includes('disciplina')){
-        parts.push(`para ${v.toLowerCase()}`);
-      } else if(key.includes('seguridad')){
-        parts.push(`con ${v}`);
-      } else if(key==='peso'){
-        parts.push(`peso ${v}`);
-      } else if(key==='cala'){
-        parts.push(`para calas ${v}`);
-      } else if(key==='rigidez'){
-        parts.push(`rigidez ${v.toLowerCase()}`);
-      } else if(key==='ventilación' || key==='ventilacion'){
-        parts.push(`ventilación ${v.toLowerCase()}`);
-      } else if(key==='navegación' || key==='navegacion'){
-        parts.push(v==='Mapas' ? 'con mapas' : 'para seguimiento básico');
-      } else if(key==='conectividad'){
-        parts.push(`conectividad ${v}`);
-      } else if(key==='métricas' || key==='metricas'){
-        parts.push(`métricas ${v.toLowerCase()}`);
-      } else if(key==='tipo'){
-        parts.push(`de tipo ${v.toLowerCase()}`);
-      } else if(key==='apps'){
-        parts.push(`compatible con ${v}`);
-      } else if(key==='potencia' || key==='simulación' || key==='simulacion'){
-        parts.push(`${key} ${v}`);
-      } else if(key==='compatibilidad'){
-        parts.push(`compatibles con ${v}`);
-      } else if(key==='medición' || key==='medicion'){
-        parts.push(`medición ${v}`);
-      } else if(key==='longitud biela'){
-        parts.push(`biela ${v} mm`);
-      } else if(key==='precisión' || key==='precision'){
-        parts.push(`precisión ${v}`);
-      } else if(key==='tamaño' || key==='tamano'){
-        parts.push(`${v}`);
-      } else if(key==='freno'){
-        parts.push(`freno de ${v.toLowerCase()}`);
-      } else if(key==='material'){
-        parts.push(v.toLowerCase());
-      } else if(key==='tubeless'){
-        parts.push(`tubeless ${v.toLowerCase()}`);
-      } else if(key==='lúmenes' || key==='lumenes'){
-        parts.push(`${v} lúmenes`);
-      } else if(key==='autonomía' || key==='autonomia'){
-        parts.push(`autonomía ${v}`);
-      } else if(key==='montaje'){
-        parts.push(`montaje en ${v.toLowerCase()}`);
-      } else if(key==='estación' || key==='estacion'){
-        parts.push(`de ${v.toLowerCase()}`);
-      } else if(key==='membrana'){
-        parts.push(`membrana ${v}`);
-      } else if(key==='carbohora'){
-        parts.push(`${v} de carbo/h`);
-      } else if(key==='cafeína' || key==='cafeina'){
-        parts.push(`con cafeína`);
-      } else if(key==='badana'){
-        parts.push(`badana ${v}`);
-      } else {
-        parts.push(`${k} ${v}`);
-      }
+      else if(key.includes('disciplina')) parts.push(`para ${v.toLowerCase()}`);
+      else if(key==='seguridad') parts.push(`con ${v}`);
+      else if(key==='peso') parts.push(`peso ${v}`);
+      else if(key==='cala') parts.push(`para calas ${v}`);
+      else if(key==='rigidez') parts.push(`rigidez ${v.toLowerCase()}`);
+      else if(key==='ventilación' || key==='ventilacion') parts.push(`ventilación ${v.toLowerCase()}`);
+      else if(key==='navegación' || key==='navegacion') parts.push(v==='Mapas'?'con mapas':'para seguimiento básico');
+      else if(key==='conectividad') parts.push(`conectividad ${v}`);
+      else if(key==='métricas' || key==='metricas') parts.push(`métricas ${v.toLowerCase()}`);
+      else if(key==='tipo') parts.push(`de tipo ${v.toLowerCase()}`);
+      else if(key==='apps') parts.push(`compatible con ${v}`);
+      else if(key==='potencia' || key==='simulación' || key==='simulacion') parts.push(`${key} ${v}`);
+      else if(key==='compatibilidad') parts.push(`compatibles con ${v}`);
+      else if(key==='medición' || key==='medicion') parts.push(`medición ${v}`);
+      else if(key==='longitud biela') parts.push(`biela ${v} mm`);
+      else if(key==='precisión' || key==='precision') parts.push(`precisión ${v}`);
+      else if(key==='tamaño' || key==='tamano') parts.push(`${v}`);
+      else if(key==='freno') parts.push(`freno de ${v.toLowerCase()}`);
+      else if(key==='material') parts.push(v.toLowerCase());
+      else if(key==='tubeless') parts.push(`tubeless ${v.toLowerCase()}`);
+      else if(key==='lúmenes' || key==='lumenes') parts.push(`${v} lúmenes`);
+      else if(key==='autonomía' || key==='autonomia') parts.push(`autonomía ${v}`);
+      else if(key==='montaje') parts.push(`montaje en ${v.toLowerCase()}`);
+      else if(key==='estación' || key==='estacion') parts.push(`de ${v.toLowerCase()}`);
+      else if(key==='membrana') parts.push(`membrana ${v}`);
+      else if(key==='carbohora') parts.push(`${v} de carbo/h`);
+      else if(key==='cafeína' || key==='cafeina') parts.push(`con cafeína`);
+      else if(key==='badana') parts.push(`badana ${v}`);
+      else parts.push(`${k} ${v}`);
     }
-
     const msg = parts.length ? `${base} ${parts.join(', ')}. Muéstrame opciones.` : `${base}. Muéstrame opciones.`;
     sendMessage(msg);
   }
@@ -622,30 +615,22 @@
     }
     return null;
   }
-  function inferBaseQuery(){
-    return activeCategory ? `Busco ${activeCategory}` : 'Busco producto';
-  }
+  function inferBaseQuery(){ return activeCategory ? `Busco ${activeCategory}` : 'Busco producto'; }
   function detectActiveCategoryFromMessage(message){
-    const m = message.trim().toLowerCase();
+    const m=message.trim().toLowerCase();
     if(m.startsWith('busco')){
       const cat = Object.keys(FACETS_BY_CATEGORY).find(k=>m.includes(k.toLowerCase()));
       activeCategory = cat || activeCategory;
       modeFallback = !FACETS_BY_CATEGORY[activeCategory];
-      if(!cat && m.startsWith('busco ')){
-        activeCategory = m.replace(/^busco\s+/,'').trim();
-        modeFallback = true;
-      }
+      if(!cat && m.startsWith('busco ')){ activeCategory = m.replace(/^busco\s+/,'').trim(); modeFallback = true; }
     }
   }
 
   // Helpers
   function showLoadingSkeletons(){
-    const container=document.createElement('div');
-    container.className='ge-skeletons';
-    container.id='loading-skeletons';
+    const container=document.createElement('div'); container.className='ge-skeletons'; container.id='loading-skeletons';
     for(let i=0;i<6;i++){ const sk=document.createElement('div'); sk.className='ge-skel'; container.appendChild(sk); }
-    chatContainer.appendChild(container);
-    scrollToBottom();
+    chatContainer.appendChild(container); scrollToBottom();
   }
   function removeLoadingSkeletons(){ document.getElementById('loading-skeletons')?.remove(); }
   function removeExistingChips(){ document.getElementById('chips-container')?.remove(); }
